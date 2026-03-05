@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 47%;
+  --border: 214 32% 91%;
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+  --primary: 222 47% 11%;
+  --primary-foreground: 210 40% 98%;
+}
+
+.dark {
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --border: 217 33% 17%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 98%;
+  --primary: 210 40% 98%;
+  --primary-foreground: 222 47% 11%;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  h1, h2, h3, h4 {
+    @apply scroll-mt-20;
+  }
+}
+
+/* ========== Content page (MDX article) ========== */
+/* Prose classes are applied in JSX (article). Only overrides below. */
+.content-page {
+  @apply max-w-none;
+}
+.content-page a {
+  @apply text-primary font-medium no-underline hover:underline;
+}
+.content-page strong {
+  @apply font-semibold text-foreground;
+}
+.content-page p {
+  @apply text-foreground/90;
+}
+.content-page li::marker {
+  @apply text-primary/60;
+}
+
+/* Hero-style first heading */
+.content-page > :first-child {
+  @apply mb-2;
+}
+.content-page h1:first-of-type {
+  @apply text-3xl font-bold tracking-tight text-foreground md:text-4xl;
+  @apply bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text;
+  @apply pb-2 mb-6 border-b border-border;
+}
+
+/* Section headings with accent */
+.content-page :where(h2):not(:where([class~="not-prose"] *)) {
+  @apply mt-12 pt-6 mb-4 text-xl font-semibold text-foreground;
+  @apply border-t border-border;
+}
+.content-page :where(h3):not(:where([class~="not-prose"] *)) {
+  @apply mt-8 mb-3 text-lg font-semibold text-foreground;
+}
+.content-page :where(h4):not(:where([class~="not-prose"] *)) {
+  @apply mt-6 mb-2 text-base font-semibold text-foreground;
+}
+
+/* Paragraphs and lists */
+.content-page p {
+  @apply my-4 leading-relaxed;
+}
+.content-page ul, .content-page ol {
+  @apply my-5 pl-6 space-y-2;
+}
+.content-page ul {
+  @apply list-disc;
+}
+.content-page ol {
+  @apply list-decimal;
+}
+.content-page li > ul, .content-page li > ol {
+  @apply my-2 ml-4;
+}
+
+/* Inline and block code */
+.content-page code {
+  @apply rounded-md bg-muted px-1.5 py-0.5 text-sm font-mono text-foreground;
+  @apply border border-border/50;
+}
+.content-page pre {
+  @apply rounded-xl border border-border bg-muted/40 p-4 overflow-x-auto my-6;
+  @apply shadow-sm;
+}
+.content-page pre code {
+  @apply bg-transparent p-0 border-0 text-inherit;
+}
+
+/* Blockquotes as subtle callouts */
+.content-page blockquote {
+  @apply border-l-4 border-primary/50 pl-5 py-1 my-6 italic text-muted-foreground;
+  @apply bg-muted/30 rounded-r-lg -mr-2 pr-4;
+}
+
+/* Horizontal rule */
+.content-page hr {
+  @apply my-8 border-border;
+}
+
+/* Tables */
+.content-page table {
+  @apply w-full my-6 text-sm border-collapse rounded-lg overflow-hidden border border-border;
+}
+.content-page th {
+  @apply bg-muted/60 px-4 py-3 text-left font-semibold text-foreground border-b border-border;
+}
+.content-page td {
+  @apply px-4 py-3 border-b border-border/50;
+}
+.content-page tr:last-child td {
+  @apply border-b-0;
+}

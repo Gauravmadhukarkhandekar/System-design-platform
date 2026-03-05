@@ -1,0 +1,17 @@
+# Rate Limiting
+
+## Introduction
+
+**Rate limiting** restricts how many requests a client (user, IP, API key) can make in a time window. It protects services from abuse and ensures fair usage.
+
+## Common Algorithms
+
+- **Fixed window**: Allow N requests per window (e.g., 100 per minute). Simple but can allow bursts at window boundaries.
+- **Sliding window**: Count requests in a rolling window; smoother than fixed window.
+- **Token bucket**: Tokens refill at a rate; each request consumes a token. Allows bursts up to bucket size.
+- **Leaky bucket**: Requests leave the bucket at a constant rate; limits burst and rate.
+
+## Summary
+
+- Rate limiting protects availability and enforces quotas.
+- Choose an algorithm (fixed/sliding window, token bucket, leaky bucket) based on how you want to handle bursts and fairness.

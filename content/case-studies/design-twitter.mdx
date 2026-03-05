@@ -1,0 +1,22 @@
+# Design Twitter
+
+## Introduction
+
+Designing a Twitter-like system involves feeds (timeline), tweets, follows, and real-time updates at massive scale. The main challenges are read-heavy feeds and fan-out strategies.
+
+## Core Features
+
+- Post tweet; follow/unfollow users; view home timeline (tweets from followees); view user profile and their tweets.
+- Optional: search, trends, notifications, media.
+
+## High-Level Design
+
+- **Tweets**: Stored with author, timestamp, content. Sharded by user or tweet ID.
+- **Social graph**: Followers/following stored in a graph store or separate tables; cached for hot users.
+- **Timeline generation**: **Fan-out on write**: on tweet, push to all followers’ timeline caches (heavy write, fast read). **Fan-out on read**: on timeline request, fetch recent tweets from followees and merge (lighter write, heavier read). Hybrid: fan-out on write for celebrities, fan-out on read for others.
+- **Caching**: Timeline caches per user; tweet and user caches.
+- **Real-time**: WebSockets or long polling for new tweets in timeline.
+
+## Summary
+
+- Store tweets and social graph; choose fan-out on write vs read vs hybrid for timelines; cache aggressively and use async processing for fan-out.

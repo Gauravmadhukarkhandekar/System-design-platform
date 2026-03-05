@@ -1,0 +1,21 @@
+# Caching
+
+## Introduction
+
+Caching stores copies of data in a faster or closer storage layer so that repeated reads can be served without hitting the primary database or service.
+
+## Benefits
+
+- Lower latency: cache hits are faster than database or API calls.
+- Higher throughput: the primary store handles fewer requests.
+- Reduced cost: less load on expensive databases or external APIs.
+
+## Cache Strategies
+
+- Cache-aside: app checks cache first; on miss, loads from DB and writes to cache.
+- Write-through: writes go to cache and DB together; reads come from cache.
+- Write-behind: writes go to cache first; DB is updated asynchronously.
+
+## Summary
+
+Use caching to improve latency and throughput. Choose a strategy based on consistency and performance requirements.

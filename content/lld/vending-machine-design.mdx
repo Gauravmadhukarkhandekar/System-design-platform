@@ -1,0 +1,21 @@
+# Vending Machine Design
+
+## Introduction
+
+A **vending machine** is a classic state-machine and OO design problem. It handles selection, payment, inventory, and dispensing.
+
+## Core Entities
+
+- **VendingMachine**: State (idle, selecting, payment, dispensing), inventory, cash.
+- **Item**: Id, price, quantity.
+- **Payment**: Cash or card; validate and complete.
+
+## States and Transitions
+
+- Idle to Selecting (user selects item).
+- Selecting to Payment (user confirms; check stock).
+- Payment to Dispensing (payment success); Dispensing to Idle (dispense and return change).
+
+## Summary
+
+- Model states clearly (state pattern or enum), validate inventory and payment, and handle change and errors.

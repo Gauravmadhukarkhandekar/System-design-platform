@@ -1,0 +1,21 @@
+# Elevator System
+
+## Introduction
+
+An **elevator system** involves multiple elevators, floors, and requests (up/down). You must design how requests are queued, assigned to elevators, and how elevators move (SCAN, LOOK, or custom).
+
+## Core Entities
+
+- **Elevator**: Current floor, direction, state (idle, moving), door state.
+- **Request**: Source floor, direction (up/down) or destination.
+- **Controller**: Assigns requests to elevators and decides order of stops.
+
+## Key Operations
+
+- Submit request (floor, direction or destination).
+- Elevator moves and stops at requested floors.
+- Handle multiple elevators and minimize wait time or total travel.
+
+## Summary
+
+- Design elevator state, request queue, and controller logic; consider strategy for scheduling (e.g., SCAN) and multi-elevator assignment.

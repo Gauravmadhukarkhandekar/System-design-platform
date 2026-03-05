@@ -1,0 +1,21 @@
+# Design Uber
+
+## Introduction
+
+An Uber-like system matches riders with drivers, tracks location, and handles pricing and payments. The design must support real-time location updates, matching, and reliability.
+
+## Core Features
+
+- Rider requests a ride; driver accepts; real-time tracking; ETA and pricing; payment and ratings.
+
+## High-Level Design
+
+- **Location service**: Drivers send location updates (high write throughput); store in a spatial index or time-series store; query nearby drivers for a given rider location.
+- **Matching**: When rider requests, find nearby available drivers; dispatch request to one or several; driver accepts; notify rider. Use message queue for async dispatch and state machine for trip lifecycle.
+- **Trip state**: Created, driver-assigned, in-progress, completed. Persist in DB; events for analytics and billing.
+- **Pricing**: Distance and time; surge pricing based on demand/supply in area; pricing service reads trip data and computes fare.
+- **Payments**: Integrate with payment gateway; idempotent charge requests; handle refunds and disputes.
+
+## Summary
+
+- Location service for driver updates and geo-queries; matching and trip state machine; pricing and payments as separate services. Scale location writes and matching logic; ensure trip state is consistent.

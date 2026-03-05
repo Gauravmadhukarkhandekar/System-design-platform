@@ -1,0 +1,22 @@
+# Design URL Shortener
+
+## Introduction
+
+A URL shortener (e.g., bit.ly) takes a long URL and returns a short alias that redirects to the original URL. The system must be highly available, scalable, and support high read throughput.
+
+## Requirements
+
+- **Functional**: Generate short URL from long URL; redirect short URL to long URL; optional analytics and custom slugs.
+- **Non-functional**: Low latency for redirects; high availability; short codes must be unique and compact.
+
+## High-Level Design
+
+- **API server**: Create short URL (store mapping), resolve short URL (lookup and redirect).
+- **Storage**: Key-value store: short code to long URL. Use a database (e.g., distributed KV store) with indexing on short code.
+- **Short code generation**: Base62 encode a unique ID (from a counter or UUID); or use hash of long URL with collision handling.
+- **Caching**: Cache short-to-long mappings for redirects (read-heavy) to reduce DB load and latency.
+- **CDN**: Cache redirects at the edge for global low latency.
+
+## Summary
+
+- Shortener = generate short code, store mapping, resolve with redirect. Use unique IDs or hashing, cache aggressively for reads, and scale the mapping store and caches.

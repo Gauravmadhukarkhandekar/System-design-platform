@@ -1,0 +1,22 @@
+# Design WhatsApp
+
+## Introduction
+
+A WhatsApp-like system provides real-time messaging (1:1 and groups), presence, and delivery/read receipts. The design must support low latency, consistency, and scale.
+
+## Core Features
+
+- Send and receive messages (text, media); group chats; online status; delivery and read receipts; message history and sync across devices.
+
+## High-Level Design
+
+- **Clients**: Connect via WebSocket or long-polling to a gateway; gateway routes messages to backend services.
+- **Messaging service**: Accept messages, persist to DB, fan-out to online recipients (via gateway) and/or push notifications for offline users.
+- **Storage**: Messages stored in a distributed DB; ordered by (chat_id, timestamp). Retention and archival policy for old messages.
+- **Groups**: Group metadata (members, admins); group messages stored and fanned out to members; optimizations for large groups (e.g., lazy load history).
+- **Presence**: Heartbeats and last-seen; stored in a fast store (e.g., Redis); broadcast to relevant contacts.
+- **Media**: Upload to object storage; store URLs in message payload; CDN for delivery.
+
+## Summary
+
+- Gateway for connections; messaging service for persistence and fan-out; storage for history; presence and media as supporting services. Optimize for delivery latency and consistency of ordering.

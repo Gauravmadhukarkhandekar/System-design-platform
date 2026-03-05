@@ -1,0 +1,21 @@
+# CAP Theorem
+
+## Introduction
+
+The **CAP theorem** states that a distributed system can provide at most two of the following three guarantees at once:
+
+- **Consistency**: Every read receives the most recent write or an error.
+- **Availability**: Every request receives a non-error response.
+- **Partition tolerance**: The system continues to operate despite network partitions.
+
+In practice, partition tolerance is assumed (networks fail), so the trade-off is between **consistency** and **availability** under partitions.
+
+## Implications
+
+- **CP systems**: Prefer consistency; may reject requests or become unavailable during partitions (e.g., some strongly consistent databases).
+- **AP systems**: Prefer availability; may return stale data during partitions (e.g., many eventually consistent stores).
+
+## Summary
+
+- CAP says you cannot have consistency, availability, and partition tolerance all at once under partitions.
+- Design and choose systems based on whether your use case can tolerate eventual consistency (AP) or needs strong consistency (CP).

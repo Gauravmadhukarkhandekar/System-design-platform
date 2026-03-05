@@ -1,0 +1,21 @@
+# Design YouTube
+
+## Introduction
+
+A YouTube-like system handles video upload, processing, storage, streaming, and metadata (search, recommendations, comments). The design is write-heavy for uploads and read-heavy for streaming and discovery.
+
+## Core Features
+
+- Upload video; transcode and store; stream video; search and browse; recommendations; comments and likes; subscriptions.
+
+## High-Level Design
+
+- **Upload**: Client uploads to blob storage or via API; job queue for transcoding (multiple resolutions/formats); metadata stored in DB (title, description, owner, status).
+- **Streaming**: Serve video from CDN; use HLS/DASH or similar for adaptive bitrate; CDN caches chunks by URL.
+- **Metadata and search**: Videos, channels, playlists in DB; search index (e.g., Elasticsearch) for full-text and filters; recommendations from ML pipeline or collaborative filtering.
+- **Comments and engagement**: Comments stored and paginated; likes/counts cached and eventually consistent with DB.
+- **Subscriptions**: Graph of channel-to-subscribers; fan-out on new video (notification feed) or on read (fetch latest from subscribed channels).
+
+## Summary
+
+- Separate upload pipeline (blob + transcoding queue), streaming (CDN), metadata and search, and engagement. Scale upload and transcoding; optimize streaming with CDN; index and recommend for discovery.

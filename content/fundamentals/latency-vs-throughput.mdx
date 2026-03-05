@@ -1,0 +1,21 @@
+# Latency vs Throughput
+
+## Introduction
+
+**Latency** is how long one operation takes (e.g., time to get a response). **Throughput** is how many operations the system can do per unit time (e.g., requests per second).
+
+## Relationship
+
+- They are related but different. You can have low latency (fast single request) but low throughput if the system does not handle concurrency well.
+- Improving one can affect the other: batching may increase throughput but add latency; more replicas can improve both if the bottleneck is capacity.
+
+## Why It Matters
+
+- **User-facing APIs**: Often optimize for latency (e.g., p99 &lt; 200 ms).
+- **Batch jobs / data pipelines**: Often optimize for throughput (e.g., events per second).
+- **Design**: Caching and connection pooling reduce latency; horizontal scaling and async processing improve throughput.
+
+## Summary
+
+- Latency = time per operation; throughput = operations per second.
+- Design choices (caching, scaling, batching) trade off or improve one or both depending on the use case.

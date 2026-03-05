@@ -1,0 +1,18 @@
+# System Design Process
+
+## Introduction
+
+A structured process helps you go from a vague problem to a clear, discussable design. This is the typical flow used in interviews and in practice.
+
+## Steps
+
+1. **Clarify requirements** — Ask about scope, users, scale, and constraints. Define functional and non-functional requirements.
+2. **Estimate scale** — Back-of-the-envelope: DAU/MAU, reads/writes per second, storage and bandwidth. This guides technology choices.
+3. **High-level design** — Sketch the main components: clients, load balancers, app servers, databases, caches, queues. Draw a diagram.
+4. **Deep dive** — Go into one or two critical areas (e.g., database schema, caching strategy, consistency model).
+5. **Identify bottlenecks** — Consider single points of failure, scaling limits, and trade-offs (e.g., consistency vs availability).
+
+## Summary
+
+- Clarify, Estimate, High-level design, Deep dive, Bottlenecks.
+- Revisit and refine as you get more constraints or feedback.

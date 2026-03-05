@@ -1,0 +1,43 @@
+# Functional vs Non Functional Requirements
+
+## Introduction
+
+Requirements define what a system must do and how well it must do it. They are typically split into **functional** and **non-functional** requirements.
+
+## Functional Requirements
+
+Functional requirements describe **what** the system does—the behaviors and features.
+
+- User can sign up and log in.
+- User can create, edit, and delete a post.
+- System sends an email when a new user registers.
+- Admin can view a dashboard of all users.
+
+These are often expressed as user stories or use cases and are directly testable (e.g., “When I click Save, the post is stored and shown in the list”).
+
+## Non-Functional Requirements (NFRs)
+
+Non-functional requirements describe **how well** the system performs—quality attributes.
+
+| Type | Examples |
+|------|----------|
+| **Performance** | Response time &lt; 200 ms, support 10K concurrent users |
+| **Scalability** | Horizontal scaling, handle 10x traffic growth |
+| **Availability** | 99.9% uptime, fault tolerance |
+| **Security** | Encryption, authentication, authorization |
+| **Reliability** | No data loss, graceful degradation |
+
+NFRs drive architectural choices (caching, replication, load balancing) and are critical for production systems.
+
+## Why the Distinction Matters
+
+- **Functional** → Features and acceptance criteria; product and engineering align on “what we build.”
+- **Non-functional** → Architecture and operations; we decide “how we build it” and how we run it.
+
+Ignoring NFRs often leads to systems that work in demos but fail under load or in the face of failures.
+
+## Summary
+
+- **Functional requirements**: what the system does (features, behaviors).
+- **Non-functional requirements**: how well it does it (performance, scalability, availability, security).
+- Both are needed for a complete design; NFRs heavily influence system architecture.

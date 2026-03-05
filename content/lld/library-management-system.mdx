@@ -1,0 +1,23 @@
+# Library Management System
+
+## Introduction
+
+A **library management system** models books, members, borrow/return, reservations, and fines. It is a good exercise in entities, relationships, and business rules.
+
+## Core Entities
+
+- **Book**: ISBN, title, copies, availability.
+- **Member**: Id, name, borrowed items, reservations.
+- **BorrowRecord**: Book, member, due date, returned date.
+- **Reservation**: Book, member, queue position.
+
+## Key Operations
+
+- Borrow and return books (update availability and due dates).
+- Reserve a book when all copies are borrowed.
+- Calculate fines for late returns.
+- Search and browse catalog.
+
+## Summary
+
+- Model books, members, borrow records, and reservations; enforce rules for max borrows, due dates, and fines.

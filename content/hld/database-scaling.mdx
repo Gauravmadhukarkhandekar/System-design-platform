@@ -1,0 +1,20 @@
+# Database Scaling
+
+## Introduction
+
+As data and traffic grow, a single database often becomes a bottleneck. **Database scaling** uses replication, read replicas, sharding, and partitioning to spread load and data.
+
+## Read Replicas
+
+- Primary handles writes; replicas replicate data and serve reads.
+- Improves read throughput and allows scaling reads horizontally. Writes still go to the primary.
+
+## Sharding
+
+- Split data across multiple databases by a shard key (e.g., user_id). Each shard holds a subset of data.
+- Enables horizontal scaling of both storage and write capacity. Adds complexity (cross-shard queries, rebalancing).
+
+## Summary
+
+- Use read replicas to scale reads; use sharding (and partitioning) to scale writes and storage.
+- Consider consistency, operational complexity, and rebalancing when choosing a strategy.

@@ -1,0 +1,21 @@
+# Scalability Basics
+
+## Introduction
+
+**Scalability** is the ability of a system to handle increased load by adding resources (e.g., more servers) without redesign.
+
+## Vertical vs Horizontal Scaling
+
+- **Vertical (scale up)**: Bigger machine—more CPU, RAM, disk. Simpler but has a ceiling and can be expensive.
+- **Horizontal (scale out)**: More machines. Requires stateless app design, load balancing, and often distributed data. Preferred for large-scale systems.
+
+## Key Concepts
+
+- **Stateless services**: No session stored on the server; any replica can serve any request. Enables horizontal scaling.
+- **Load balancing**: Distribute traffic across replicas (round-robin, least connections, etc.).
+- **Database scaling**: Read replicas, sharding, and partitioning to spread read/write load and data.
+
+## Summary
+
+- Prefer horizontal scaling for long-term growth.
+- Design stateless services and use load balancers and database scaling strategies to scale out.

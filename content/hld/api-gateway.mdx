@@ -1,0 +1,16 @@
+# API Gateway
+
+## Introduction
+
+An **API gateway** is a single entry point for client requests to backend services. It handles routing, authentication, rate limiting, and often request/response transformation.
+
+## Responsibilities
+
+- **Routing**: Forward requests to the right service based on path, method, or headers.
+- **Auth**: Validate API keys, JWT, or other credentials before forwarding.
+- **Rate limiting**: Throttle clients to protect backends.
+- **Aggregation**: Combine multiple backend calls into one response (BFF pattern).
+
+## Summary
+
+- API gateways centralize cross-cutting concerns (auth, rate limiting, routing) and provide a single entry point for clients.

@@ -2,19 +2,25 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { navigation } from '@/lib/navigation';
+import { navigation, type NavItem } from '@/lib/navigation';
 import { clsx } from 'clsx';
 
 type SearchItem = { title: string; href: string; section: string };
 
 function flattenNav(): SearchItem[] {
   const items: SearchItem[] = [];
-  for (const section of navigation) {
-    if (section.items) {
-      for (const item of section.items) {
-        items.push({ title: item.title, href: item.href, section: section.title });
+  function walk(sectionTitle: string, navItems: NavItem[] | undefined) {
+    if (!navItems) return;
+    for (const item of navItems) {
+      if (item.items?.length) {
+        walk(sectionTitle, item.items);
+      } else if (item.href) {
+        items.push({ title: item.title, href: item.href, section: sectionTitle });
       }
     }
+  }
+  for (const section of navigation) {
+    if (section.items) walk(section.title, section.items);
   }
   return items;
 }

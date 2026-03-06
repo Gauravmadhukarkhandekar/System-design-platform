@@ -6,12 +6,18 @@
 
 ## Common Algorithms
 
-- **Fixed window**: Allow N requests per window (e.g., 100 per minute). Simple but can allow bursts at window boundaries.
+- **Fixed window**: Allow N requests per window (e.g. 100 per minute). Simple but can allow bursts at window boundaries.
 - **Sliding window**: Count requests in a rolling window; smoother than fixed window.
 - **Token bucket**: Tokens refill at a rate; each request consumes a token. Allows bursts up to bucket size.
 - **Leaky bucket**: Requests leave the bucket at a constant rate; limits burst and rate.
 
+<Callout variant="tip" title="Where to enforce">
+Rate limit at the API gateway or at the edge so abusive traffic is stopped before hitting your application and database.
+</Callout>
+
 ## Summary
 
-- Rate limiting protects availability and enforces quotas.
+<SummaryBox title="Key takeaways">
+- Rate limiting protects availability and enforces quotas per client (IP, user, API key).
 - Choose an algorithm (fixed/sliding window, token bucket, leaky bucket) based on how you want to handle bursts and fairness.
+</SummaryBox>

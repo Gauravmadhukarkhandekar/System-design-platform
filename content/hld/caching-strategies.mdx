@@ -1,0 +1,54 @@
+# Caching Strategies
+
+## Introduction
+
+**Caching** stores copies of data in a faster or closer storage layer so repeated reads can be served without hitting the primary database. The strategy you choose affects consistency and performance.
+
+## Cache-Aside (Lazy Loading)
+
+Application is responsible for loading and invalidating the cache.
+
+1. On **read**: Check cache; on miss, read from DB, then write to cache.
+2. On **write**: Write to DB, then invalidate (or update) cache.
+
+- **Pros**: Cache only holds what is read; simple.
+- **Cons**: Cache miss adds latency; invalidation can be tricky.
+
+<DiagramBlock
+  chart="sequenceDiagram
+    participant App
+    participant Cache
+    participant DB
+    App->>Cache: get(key)
+    Cache-->>App: miss
+    App->>DB: get(key)
+    DB-->>App: value
+    App->>Cache: set(key, value)"
+  title="Cache-aside: read miss flow"
+/>
+
+## Write-Through
+
+Every write goes to both cache and database. Cache and DB stay in sync on write.
+
+- **Pros**: Read after write is always consistent.
+- **Cons**: Write latency includes both; cache holds all written data.
+
+## Write-Behind (Write-Back)
+
+Writes go to cache first; database is updated asynchronously in batches.
+
+- **Pros**: Very fast writes; reduces DB load.
+- **Cons**: Risk of data loss if cache fails before flush; more complex.
+
+<Callout variant="warning" title="Consistency">
+Write-behind trades consistency and durability for speed. Use when you can tolerate some delay or loss.
+</Callout>
+
+## Summary
+
+<SummaryBox title="Key takeaways">
+- **Cache-aside**: App loads cache on miss; invalidates on write. Most common.
+- **Write-through**: Writes go to cache and DB; strong consistency.
+- **Write-behind**: Writes to cache, async to DB; fast but risk of loss.
+</SummaryBox>

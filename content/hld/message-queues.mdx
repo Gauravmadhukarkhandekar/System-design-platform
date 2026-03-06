@@ -4,6 +4,13 @@
 
 A **message queue** decouples producers (who send messages) from consumers (who process them). Messages are stored in the queue until consumed, enabling async processing and load leveling.
 
+```mermaid
+flowchart LR
+  P[Producer] --> Q[Queue]
+  Q --> C1[Consumer 1]
+  Q --> C2[Consumer 2]
+```
+
 ## Benefits
 
 - **Decoupling**: Producers and consumers can scale and deploy independently.
@@ -12,11 +19,18 @@ A **message queue** decouples producers (who send messages) from consumers (who 
 
 ## Common Use Cases
 
-- Async task processing (e.g., send email, generate report).
+- Async task processing (send email, generate report).
 - Event-driven architecture (events published to a queue, multiple subscribers).
 - Buffering between high-throughput producers and slower consumers.
 
+<Callout variant="tip" title="Idempotent consumers">
+Design consumers to be idempotent so duplicate delivery (e.g. after retry) does not cause duplicate side effects.
+</Callout>
+
 ## Summary
 
+<SummaryBox title="Key takeaways">
 - Message queues provide async, reliable communication between services.
 - Use them for decoupling, reliability, and smoothing load between producers and consumers.
+- Prefer idempotent consumers for at-least-once delivery semantics.
+</SummaryBox>

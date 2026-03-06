@@ -10,12 +10,28 @@ The **CAP theorem** states that a distributed system can provide at most two of 
 
 In practice, partition tolerance is assumed (networks fail), so the trade-off is between **consistency** and **availability** under partitions.
 
+```mermaid
+flowchart LR
+  subgraph "Pick two"
+    C[Consistency]
+    A[Availability]
+    P[Partition Tolerance]
+  end
+```
+
 ## Implications
 
-- **CP systems**: Prefer consistency; may reject requests or become unavailable during partitions (e.g., some strongly consistent databases).
-- **AP systems**: Prefer availability; may return stale data during partitions (e.g., many eventually consistent stores).
+- **CP systems**: Prefer consistency; may reject requests or become unavailable during partitions (e.g. strongly consistent databases).
+- **AP systems**: Prefer availability; may return stale data during partitions (e.g. eventually consistent stores).
+
+<Callout variant="info" title="In practice">
+Most distributed systems choose AP (availability) and use eventual consistency. Strong consistency (CP) is used when correctness is critical (e.g. financial transactions).
+</Callout>
 
 ## Summary
 
-- CAP says you cannot have consistency, availability, and partition tolerance all at once under partitions.
-- Design and choose systems based on whether your use case can tolerate eventual consistency (AP) or needs strong consistency (CP).
+<SummaryBox title="Key takeaways">
+- CAP: you cannot have consistency, availability, and partition tolerance all at once under partitions.
+- **CP**: consistency over availability; **AP**: availability over consistency (eventual consistency).
+- Choose based on whether your use case can tolerate eventual consistency (AP) or needs strong consistency (CP).
+</SummaryBox>

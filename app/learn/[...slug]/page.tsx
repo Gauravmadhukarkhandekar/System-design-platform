@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { getAllContentPaths } from '@/lib/content';
-import { navigation } from '@/lib/navigation';
+import { navigation, type NavItem } from '@/lib/navigation';
 import { ContentLayout } from '@/components/ContentLayout';
 import { CodeBlock } from '@/components/CodeBlock';
 import { DiagramBlock } from '@/components/DiagramBlock';
@@ -62,6 +62,54 @@ function extractHeadings(content: string): { id: string; text: string; level: nu
   return headings;
 }
 
+function renderSectionItems(items: NavItem[] | undefined) {
+  const hasGroups = items?.some((i) => i.items?.length);
+  if (!hasGroups) {
+    return (
+      <ul className="space-y-2">
+        {items?.map((item) =>
+          item.href ? (
+            <li key={item.href}>
+              <Link href={item.href} className="text-primary hover:underline font-medium">
+                {item.title}
+              </Link>
+            </li>
+          ) : null
+        )}
+      </ul>
+    );
+  }
+  return items?.map((item) => {
+    if (item.items?.length) {
+      return (
+        <div key={item.title} className="mb-6">
+          <h2 className="mb-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            {item.title}
+          </h2>
+          <ul className="space-y-1">
+            {item.items.map((sub) =>
+              sub.href ? (
+                <li key={sub.href}>
+                  <Link href={sub.href} className="text-primary hover:underline font-medium">
+                    {sub.title}
+                  </Link>
+                </li>
+              ) : null
+            )}
+          </ul>
+        </div>
+      );
+    }
+    return item.href ? (
+      <li key={item.href}>
+        <Link href={item.href} className="text-primary hover:underline font-medium">
+          {item.title}
+        </Link>
+      </li>
+    ) : null;
+  });
+}
+
 export async function generateStaticParams() {
   const paths = getAllContentPaths();
   const docParams = paths.map(({ section, slug }) => ({ slug: [section, slug] }));
@@ -81,6 +129,7 @@ export default async function LearnPage({
     const section = slug[0];
     const sectionNav = navigation.find((n) => n.href === `/learn/${section}`);
     if (!sectionNav?.items?.length) notFound();
+
     return (
       <ContentLayout toc={[]}>
         <div className="space-y-8">
@@ -88,18 +137,7 @@ export default async function LearnPage({
           <p className="text-muted-foreground">
             Choose a topic to get started.
           </p>
-          <ul className="space-y-2">
-            {sectionNav.items.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="text-primary hover:underline font-medium"
-                >
-                  {item.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div className="space-y-2">{renderSectionItems(sectionNav.items)}</div>
         </div>
       </ContentLayout>
     );
@@ -108,13 +146,32 @@ export default async function LearnPage({
   const [section, ...rest] = slug;
   const slugStr = rest.join('/');
   const filePath = path.join(contentDir, section, `${slugStr}.mdx`);
-  let raw: string;
+  const allPaths = getAllContentPaths();
+  const pathExists = allPaths.some((p) => p.section === section && p.slug === slugStr);
+
+  let raw: string | null = null;
   try {
     raw = fs.readFileSync(filePath, 'utf-8');
   } catch {
-    notFound();
+    if (!pathExists) notFound();
   }
-  const { content, data } = matter(raw);
+
+  if (!raw && pathExists) {
+    const titleFromSlug = slugStr.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+    return (
+      <ContentLayout toc={[]}>
+        <div className="relative">
+          <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-b from-muted/30 to-transparent dark:from-muted/20" aria-hidden />
+          <article className="content-page prose prose-neutral dark:prose-invert max-w-none rounded-2xl px-4 py-6 sm:px-6 sm:py-8 md:px-8">
+            <h1>{titleFromSlug}</h1>
+            <p className="text-muted-foreground">Content coming soon.</p>
+          </article>
+        </div>
+      </ContentLayout>
+    );
+  }
+
+  const { content, data } = matter(raw!);
   const toc = extractHeadings(content);
 
   return (

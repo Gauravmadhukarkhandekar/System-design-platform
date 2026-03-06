@@ -116,7 +116,7 @@ export default function HomePage() {
       </section>
 
       <footer className="border-t border-border py-8 px-4 text-center text-sm text-muted-foreground">
-        System Design Learning Platform — Static documentation. No backend. Built with Next.js &amp; MDX.
+        System Design Learning Platform — Developed by Gaurav Khandekar
       </footer>
     </div>
   );

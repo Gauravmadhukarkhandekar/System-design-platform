@@ -1,0 +1,45 @@
+# System Design Glossary
+
+## Introduction
+
+This page defines common terms you will see in system design discussions and interviews.
+
+## Core Terms
+
+| Term | Definition |
+|------|------------|
+| **Latency** | Time taken for one operation (e.g. time to get a response). |
+| **Throughput** | Number of operations per unit time (e.g. requests per second). |
+| **Scalability** | Ability to handle increased load by adding resources. |
+| **Availability** | Fraction of time the system is operational (e.g. 99.9% uptime). |
+| **Consistency** | Whether all nodes see the same data at the same time. |
+| **Durability** | Once data is written, it is not lost (e.g. after a crash). |
+
+## Architecture Terms
+
+| Term | Definition |
+|------|------------|
+| **Load Balancer** | Distributes traffic across multiple servers. |
+| **Horizontal Scaling** | Adding more machines (scale out). |
+| **Vertical Scaling** | Adding more CPU/RAM to one machine (scale up). |
+| **Sharding** | Splitting data across multiple databases by a key. |
+| **Replication** | Copying data to multiple nodes for redundancy or read scaling. |
+| **Cache** | Fast storage layer to reduce latency and load on the primary store. |
+
+## Distributed Systems Terms
+
+| Term | Definition |
+|------|------------|
+| **Partition** | Network split; some nodes cannot talk to others. |
+| **CAP** | Consistency, Availability, Partition tolerance; pick two under partition. |
+| **Idempotency** | Performing an operation multiple times has the same effect as once. |
+| **Message Queue** | Async channel for sending messages between services. |
+| **API Gateway** | Single entry point for clients; handles routing, auth, rate limiting. |
+
+## Summary
+
+<SummaryBox title="Key terms">
+- **Latency** vs **Throughput**; **Horizontal** vs **Vertical** scaling.
+- **Load balancer**, **Cache**, **Sharding**, **Replication** are building blocks.
+- **CAP**, **Idempotency**, **Message Queue**, **API Gateway** for distributed systems.
+</SummaryBox>

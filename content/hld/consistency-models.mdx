@@ -1,0 +1,43 @@
+# Consistency Models
+
+## Introduction
+
+In distributed systems, **consistency** defines what guarantees you get when reading data after writes. Different models trade off consistency for availability and performance.
+
+## Strong Consistency
+
+After a write completes, **every** read sees the latest value. No stale reads.
+
+- **Pros**: Simple mental model; correct for critical data.
+- **Cons**: Requires coordination; can limit availability and add latency.
+
+## Eventual Consistency
+
+After a write, reads **may** see old data for some time; eventually all replicas converge.
+
+- **Pros**: High availability and performance; works well with replication and caching.
+- **Cons**: Application must handle stale reads.
+
+## Other Models
+
+- **Causal consistency**: Reads respect cause-effect order.
+- **Read-your-writes**: A user always sees their own writes.
+- **Session consistency**: Same as read-your-writes within a session.
+
+```mermaid
+flowchart LR
+  W[Write] --> R1[Read]
+  R1 --> R2[Strong or Eventual]
+```
+
+<Callout variant="warning" title="CAP">
+Under network partition, you often choose between strong consistency and availability. Eventual consistency is common when you choose availability.
+</Callout>
+
+## Summary
+
+<SummaryBox title="Key takeaways">
+- **Strong consistency**: every read sees the latest write.
+- **Eventual consistency**: reads may be stale; eventually converge.
+- Causal, read-your-writes, and session consistency are useful relaxations.
+</SummaryBox>

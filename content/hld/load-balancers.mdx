@@ -10,6 +10,14 @@ A **load balancer** distributes incoming traffic across multiple servers to impr
 - **Horizontal scaling**: Add more servers and the load balancer spreads the load.
 - **Single entry point**: Clients talk to one endpoint (VIP or DNS); the balancer hides the pool of servers.
 
+```mermaid
+flowchart LR
+  Client --> LB[Load Balancer]
+  LB --> S1[Server 1]
+  LB --> S2[Server 2]
+  LB --> S3[Server 3]
+```
+
 ## Common Strategies
 
 - **Round robin**: Send each request to the next server in order.
@@ -17,7 +25,13 @@ A **load balancer** distributes incoming traffic across multiple servers to impr
 - **Weighted**: Assign more traffic to more powerful or preferred servers.
 - **IP hash**: Use client IP (or other key) so the same client often hits the same server (session affinity).
 
+<Callout variant="tip" title="Stateless apps">
+If your app is stateless, use round robin or least connections. Sticky sessions (IP hash) make scaling and deploys harder.
+</Callout>
+
 ## Summary
 
+<SummaryBox title="Key takeaways">
 - Load balancers distribute traffic across multiple servers for scalability and availability.
-- Choose a strategy (round robin, least connections, weighted, hash) based on your needs (e.g., stateless vs sticky sessions).
+- Choose a strategy (round robin, least connections, weighted, hash) based on your needs (stateless vs sticky sessions).
+</SummaryBox>

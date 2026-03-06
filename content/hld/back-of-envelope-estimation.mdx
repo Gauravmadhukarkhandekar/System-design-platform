@@ -1,0 +1,55 @@
+# Back-of-the-Envelope Estimation
+
+## Introduction
+
+**Back-of-the-envelope estimation** is doing rough calculations with simple numbers to size a system (storage, bandwidth, QPS) without a calculator. It is essential in system design interviews.
+
+## Why It Matters
+
+- Shows you can reason about scale.
+- Helps validate whether a design can handle expected load.
+- Uses round numbers (e.g. 1 million = 10^6) for quick math.
+
+## Assumptions and Round Numbers
+
+- **DAU (Daily Active Users)**: e.g. 100M, 10M, 1M.
+- **Requests per user per day**: e.g. 10–100.
+- **Seconds per day**: 24 × 3600 ≈ **86,400** ≈ **10^5** (for easy math).
+- **Average size**: e.g. request 1 KB, response 10 KB.
+
+<Callout variant="tip" title="Interview tip">
+State your assumptions clearly. It is better to say "Assume 10M DAU" and then calculate than to guess silently.
+</Callout>
+
+## Example: QPS
+
+- 10M DAU, 10 requests per user per day.
+- Total requests per day = 10M × 10 = **100M**.
+- QPS = 100M / 86,400 ≈ 100M / 100K ≈ **1,000 QPS** (peak can be 2–3x).
+
+## Example: Storage (5 years)
+
+- 100M users, 1 KB profile each = 100 GB.
+- 10 photos per user, 1 MB each = 1 TB.
+- Total ≈ **1.1 TB**; for 5 years with growth, maybe **5–10 TB**.
+
+## Example: Bandwidth
+
+- 1,000 QPS, 10 KB response = 10 MB/s ≈ **80 Mbps** outbound.
+
+```mermaid
+flowchart LR
+  A[DAU × Reqs/day] --> B[Reqs/day]
+  B --> C["÷ 86,400"]
+  C --> D[QPS]
+  D --> E[× Response size]
+  E --> F[Bandwidth]
+```
+
+## Summary
+
+<SummaryBox title="Key takeaways">
+- Use **round numbers** and **clear assumptions** (DAU, requests/user, sizes).
+- **QPS** = (DAU × requests per user) / 86,400; peak ≈ 2–3× average.
+- **Storage** and **bandwidth** follow from data size and request rate.
+</SummaryBox>

@@ -20,24 +20,45 @@
 
 ### How relational data fits together
 
-**`users`** and **`orders`** — classic one-to-many by `user_id`:
+**`users`** and **`orders`** — classic **one-to-many** linked by **`user_id`** → **`users.id`**.
 
-| id | name  | email           |
-| -- | ----- | --------------- |
-| 1  | Alice | alice@mail.com  |
-| 2  | Bob   | bob@mail.com    |
+<MetricTable
+  title="users"
+  subtitle="Each row is one person; id is the primary key (PK)."
+  columns={['id (PK)', 'name', 'email']}
+  rows={[
+    ['1', 'Alice', 'alice@mail.com'],
+    ['2', 'Bob', 'bob@mail.com'],
+  ]}
+/>
 
-| id  | user_id | total |
-| --- | ------- | ----- |
-| 101 | 1       | $50   |
-| 102 | 1       | $30   |
-| 103 | 2       | $75   |
+<MetricTable
+  title="orders"
+  subtitle="user_id is a foreign key (FK) — it references users.id."
+  columns={['id (PK)', 'user_id (FK)', 'total']}
+  rows={[
+    ['101', '1', '$50'],
+    ['102', '1', '$30'],
+    ['103', '2', '$75'],
+  ]}
+/>
 
 ```sql
 SELECT u.name, o.total
 FROM users u
 JOIN orders o ON u.id = o.user_id;
 ```
+
+<MetricTable
+  title="Result of the JOIN (example)"
+  subtitle="One row per matching pair — Alice appears twice because she has two orders."
+  columns={['name', 'total']}
+  rows={[
+    ['Alice', '$50'],
+    ['Alice', '$30'],
+    ['Bob', '$75'],
+  ]}
+/>
 
 <Callout variant="tip" title="Why JOINs matter">
 Relational design **normalizes** data to avoid duplication. Reports that span entities are **JOINs** — powerful, but heavy if tables are huge without indexes or if you over-shard.

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import mermaid from 'mermaid';
 
 type Props = {
   chart: string;
@@ -13,23 +12,31 @@ export function DiagramBlock({ chart, title }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    mermaid.initialize({
-      startOnLoad: false,
-      theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
-      securityLevel: 'loose',
-    });
-  }, []);
-
-  useEffect(() => {
     if (!ref.current || !chart) return;
+
+    let cancelled = false;
     setError(null);
     const id = `mermaid-${Math.random().toString(36).slice(2, 9)}`;
-    mermaid
-      .render(id, chart)
-      .then(({ svg }) => {
-        if (ref.current) ref.current.innerHTML = svg;
-      })
-      .catch((e) => setError(e.message ?? 'Diagram failed to render'));
+
+    void (async () => {
+      try {
+        const mermaid = (await import('mermaid')).default;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: document.documentElement.classList.contains('dark') ? 'dark' : 'default',
+          securityLevel: 'loose',
+        });
+        const { svg } = await mermaid.render(id, chart);
+        if (!cancelled && ref.current) ref.current.innerHTML = svg;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : 'Diagram failed to render';
+        if (!cancelled) setError(msg);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [chart]);
 
   return (

@@ -9,6 +9,7 @@ import { DiagramBlock } from '@/components/DiagramBlock';
 import { Card } from '@/components/Card';
 import { Callout } from '@/components/Callout';
 import { SummaryBox } from '@/components/SummaryBox';
+import { ComparisonTable } from '@/components/ComparisonTable';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import matter from 'gray-matter';
@@ -41,6 +42,7 @@ const mdxComponents = {
   Card,
   Callout,
   SummaryBox,
+  ComparisonTable,
 };
 
 const contentDir = path.join(process.cwd(), 'content');

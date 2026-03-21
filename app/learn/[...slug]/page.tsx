@@ -12,6 +12,7 @@ import { SummaryBox } from '@/components/SummaryBox';
 import { ComparisonTable } from '@/components/ComparisonTable';
 import { LatencyThroughputSimulator } from '@/components/LatencyThroughputSimulator';
 import { RequestLifecycleSimulator } from '@/components/RequestLifecycleSimulator';
+import { ScalingMindsetExplorer } from '@/components/ScalingMindsetExplorer';
 import { MetricTable } from '@/components/MetricTable';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
@@ -49,6 +50,7 @@ const mdxComponents = {
   ComparisonTable,
   LatencyThroughputSimulator,
   RequestLifecycleSimulator,
+  ScalingMindsetExplorer,
   MetricTable,
   table: MdxTable,
 };

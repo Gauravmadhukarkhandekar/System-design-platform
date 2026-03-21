@@ -1,47 +1,208 @@
 # Database Fundamentals
 
-## Introduction
+**SQL vs NoSQL**, **ACID**, and **when to pick what** — the data layer under almost every system. Use **tables** for comparisons; use **boxes** for rules of thumb and examples.
 
-Databases store and retrieve data for your application. Choosing the right type and using it correctly is central to system design.
+## The filing system analogy
 
-## Types of Databases
+<MetricTable
+  title="Spreadsheet vs folders"
+  subtitle="Not a perfect mapping, but a fast mental model in interviews."
+  columns={['Style', 'Like…', 'Database idea']}
+  rows={[
+    ['SQL (relational)', 'Excel with strict columns — every row matches the sheet schema', 'Tables, typed columns, JOINs across related rows'],
+    ['NoSQL (various)', 'Folders of documents — each file can have different fields', 'Flexible shapes; optimize for access pattern (document, KV, wide-column, graph)'],
+  ]}
+/>
 
-- **Relational (SQL)**: Tables, rows, columns; ACID transactions; strong consistency. Examples: PostgreSQL, MySQL.
-- **NoSQL**: Document, key-value, wide-column, graph; often optimized for scale or flexibility. Examples: MongoDB, Redis, Cassandra.
+## SQL (relational) databases
 
-## Key Concepts
+**SQL databases** store rows in **tables** with a declared **schema**. **Foreign keys** express relationships. **SQL** is the standard way to query, aggregate, and join.
 
-- **Schema**: Structure of your data (columns and types in SQL; document shape in document stores).
-- **Index**: Data structure to speed up lookups (e.g. by primary key or indexed column).
-- **Transaction**: A group of operations that succeed or fail together (ACID).
-- **Replication**: Copying data to multiple nodes for redundancy or read scaling.
-- **Sharding**: Splitting data across multiple databases by a key (e.g. user_id).
+### How relational data fits together
+
+**`users`** and **`orders`** — classic one-to-many by `user_id`:
+
+| id | name  | email           |
+| -- | ----- | --------------- |
+| 1  | Alice | alice@mail.com  |
+| 2  | Bob   | bob@mail.com    |
+
+| id  | user_id | total |
+| --- | ------- | ----- |
+| 101 | 1       | $50   |
+| 102 | 1       | $30   |
+| 103 | 2       | $75   |
+
+```sql
+SELECT u.name, o.total
+FROM users u
+JOIN orders o ON u.id = o.user_id;
+```
+
+<Callout variant="tip" title="Why JOINs matter">
+Relational design **normalizes** data to avoid duplication. Reports that span entities are **JOINs** — powerful, but heavy if tables are huge without indexes or if you over-shard.
+</Callout>
+
+<MetricTable
+  title="Popular SQL engines (high level)"
+  subtitle="Production choices vary; teams often cite these — verify for your era and workload."
+  columns={['Engine', 'Traits', 'Often mentioned with']}
+  compact
+  rows={[
+    ['PostgreSQL', 'Rich SQL, extensions, JSON columns, strong ecosystem', 'Many greenfield backends, analytics-adjacent workloads'],
+    ['MySQL / MariaDB', 'Mature, huge community, replication story', 'LAMP stacks, many web products historically'],
+    ['SQL Server', 'Enterprise tooling, Windows / Azure integration', 'Corporate .NET / Microsoft stacks'],
+  ]}
+/>
+
+## NoSQL databases
+
+**NoSQL** usually means **not only** relational tables — different **data models** and **trade-offs** (scale-out, flexible schema, specialized queries). Consistency models vary (**eventual** is common outside the transaction core).
+
+<MetricTable
+  title="Four NoSQL families"
+  columns={['Type', 'Examples', 'Shape', 'Often best for']}
+  compact
+  rows={[
+    ['Document', 'MongoDB, CouchDB', 'JSON-like documents; schema flexible per doc', 'Profiles, catalogs, content, evolving objects'],
+    ['Key–value', 'Redis, DynamoDB, Memcached', 'Key → blob; O(1) lookups', 'Cache, sessions, leaderboards, feature flags'],
+    ['Wide-column', 'Cassandra, HBase, ScyllaDB', 'Sparse rows, partition key + clustering', 'Time-series, high write rates, IoT ingest'],
+    ['Graph', 'Neo4j, Amazon Neptune', 'Nodes + edges; traversals first-class', 'Social graph, fraud rings, recommendations'],
+  ]}
+/>
+
+<details className="group my-3 rounded-xl border border-border bg-card/40 open:bg-muted/20">
+  <summary className="cursor-pointer px-4 py-3 font-semibold text-foreground">Document store — tiny example</summary>
+  <div className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
+    Two users, different fields allowed in the same collection — application validates what it reads.
+    <pre className="mt-2 overflow-x-auto rounded-lg bg-muted/50 p-3 font-mono text-xs">{`{ "_id": 1, "name": "Alice", "vip": true }
+{ "_id": 2, "name": "Bob", "locale": "de-DE" }`}</pre>
+  </div>
+</details>
+
+<details className="group my-3 rounded-xl border border-border bg-card/40 open:bg-muted/20">
+  <summary className="cursor-pointer px-4 py-3 font-semibold text-foreground">Key–value — tiny example</summary>
+  <div className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
+    Like a big hash map — values can be strings, bytes, or small structured blobs.
+    <pre className="mt-2 overflow-x-auto rounded-lg bg-muted/50 p-3 font-mono text-xs">{`session:abc123  →  serialized user + expiry
+cart:user:42     →  JSON cart snapshot`}</pre>
+  </div>
+</details>
+
+<details className="group my-3 rounded-xl border border-border bg-card/40 open:bg-muted/20">
+  <summary className="cursor-pointer px-4 py-3 font-semibold text-foreground">Wide-column — tiny example</summary>
+  <div className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
+    Rows grouped by **partition key**; columns can be sparse — good for append-heavy timelines.
+    <pre className="mt-2 overflow-x-auto rounded-lg bg-muted/50 p-3 font-mono text-xs">{`PK=device_7 | ts=10:01 | temp=22.1
+PK=device_7 | ts=10:02 | temp=22.4 | humidity=41`}</pre>
+  </div>
+</details>
+
+<details className="group my-3 rounded-xl border border-border bg-card/40 open:bg-muted/20">
+  <summary className="cursor-pointer px-4 py-3 font-semibold text-foreground">Graph — tiny example</summary>
+  <div className="border-t border-border px-4 py-3 text-sm text-muted-foreground">
+    Queries follow relationships — “friends of friends who bought X” without giant JOIN explosions in some cases.
+    <pre className="mt-2 overflow-x-auto rounded-lg bg-muted/50 p-3 font-mono text-xs">{`(Alice)-[:FOLLOWS]->(Bob)-[:BOUGHT]->(SKU-42)`}</pre>
+  </div>
+</details>
+
+## SQL vs NoSQL: comparison
+
+<MetricTable
+  title="At a glance"
+  subtitle="Rules of thumb — exceptions exist (e.g. distributed SQL, Postgres scale-out)."
+  columns={['Aspect', 'Typical SQL', 'Typical NoSQL']}
+  compact
+  rows={[
+    ['Schema', 'Fixed upfront; migrations', 'Flexible per model; app enforces shape'],
+    ['Scaling reads', 'Replicas, bigger machines, then harder problems', 'Often partition / shard by access pattern'],
+    ['Relationships', 'JOINs, FK integrity', 'Embed, duplicate, or app-side joins'],
+    ['Transactions', 'Strong ACID common', 'Varies — some offer tunable consistency'],
+    ['Query language', 'SQL (standard-ish)', 'Driver-specific APIs, query DSLs'],
+    ['Sweet spot', 'Complex queries, reporting, strong invariants', 'Massive partitionable workloads, simple key paths, special models'],
+  ]}
+/>
+
+## ACID properties
+
+**ACID** describes guarantees many **relational** systems target for **transactions**. Critical when money, inventory, or identity must stay correct under concurrency and failure.
+
+<AcidPropertiesCards />
+
+<Callout variant="warning" title="Not all NoSQL is “non-ACID”">
+Some document and wide-column systems offer **multi-document** or **limited** transactions — always read the **docs** for your version. **Isolation levels** in SQL also differ (READ COMMITTED vs SERIALIZABLE).
+</Callout>
+
+## When to use what
+
+<div className="not-prose my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border border-sky-300/50 bg-sky-500/10 p-5 ring-1 ring-sky-500/15 dark:border-sky-800/40">
+    <p className="mb-3 flex items-center gap-2 font-bold text-sky-900 dark:text-sky-100">
+      <span className="text-lg" aria-hidden>✓</span>
+      Lean SQL when…
+    </p>
+    <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Rich **relationships** (orders → products → categories)</li>
+      <li>You need **ad-hoc reports** and **JOINs**</li>
+      <li>**ACID** matters (payments, inventory, ledger)</li>
+      <li>Schema is **stable** and shared across teams</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border border-violet-300/50 bg-violet-500/10 p-5 ring-1 ring-violet-500/15 dark:border-violet-800/40">
+    <p className="mb-3 flex items-center gap-2 font-bold text-violet-900 dark:text-violet-100">
+      <span className="text-lg" aria-hidden>✓</span>
+      Lean NoSQL when…
+    </p>
+    <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>**Scale-out** and partitionable access patterns</li>
+      <li>Schema **evolves fast** or differs per tenant</li>
+      <li>Hot path is **simple** (get/put by key or partition)</li>
+      <li>**Write-heavy** streams (events, logs, IoT)</li>
+    </ul>
+  </div>
+</div>
+
+<Callout variant="tip" title="Interview: polyglot persistence">
+Real stacks mix **PostgreSQL** (core transactional data), **Redis** (cache / sessions), **Elasticsearch** (search), **Cassandra** (feeds / history) — **different jobs**, not “SQL vs NoSQL winner.”
+</Callout>
+
+## Real-world examples (illustrative)
+
+<MetricTable
+  title="How big products often split data"
+  subtitle="Architecture changes over time — treat as patterns, not facts."
+  columns={['Company', 'SQL-ish / core', 'NoSQL / specialized']}
+  compact
+  rows={[
+    ['Instagram (pattern)', 'PostgreSQL for relational core', 'Redis cache; wide-column / custom for feed scale'],
+    ['Netflix (pattern)', 'MySQL for billing / accounts', 'Cassandra-class stores for viewing history; ElastiCache'],
+    ['Uber (pattern)', 'MySQL for core trip / user data', 'Redis for real-time; history in scalable stores'],
+  ]}
+/>
 
 ```mermaid
 flowchart TB
-  subgraph "Application"
-    App[App Server]
+  subgraph app [Application]
+    API[API / workers]
   end
-  subgraph "Data layer"
-    DB[(Primary DB)]
-    R1[(Replica 1)]
-    R2[(Replica 2)]
-    DB --> R1
-    DB --> R2
+  subgraph data [Data layer]
+    SQL[(SQL primary)]
+    R[(Replicas)]
+    KV[(Redis / cache)]
+    SQL --> R
   end
-  App --> DB
-  App --> R1
-  App --> R2
+  API --> SQL
+  API --> R
+  API --> KV
 ```
 
-<Callout variant="tip" title="Read vs write">
-Often writes go to the primary; reads can go to replicas. This increases read throughput but may return slightly stale data.
-</Callout>
+## Key takeaways
 
-## Summary
-
-<SummaryBox title="Key takeaways">
-- **SQL** for structured data and strong consistency; **NoSQL** for scale or flexible schema.
-- **Indexes** speed up queries; **replication** and **sharding** help scale.
-- Writes to primary; reads from replicas is a common pattern.
+<SummaryBox title="Database fundamentals — recap">
+- **SQL** = structured tables, **JOINs**, **schema**, **ACID** transactions — default for many business domains.
+- **NoSQL** = multiple models (**document, KV, wide-column, graph**) — match **access pattern** and **scale** needs.
+- **ACID** = **Atomicity, Consistency, Isolation, Durability** — the reliability contract for critical transactions.
+- Choose by **workload**, not buzzwords — **SQL is often enough** until metrics force otherwise.
+- **Polyglot persistence** is normal: one system rarely does cache + search + ledger equally well.
+- **Indexes**, **replication**, and **sharding** still apply — whatever the logo on the box.
 </SummaryBox>

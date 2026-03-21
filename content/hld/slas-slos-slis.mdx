@@ -1,0 +1,226 @@
+# SLAs, SLOs & SLIs
+
+The three pillars of **reliability engineering**: define what “good” means (**SLI**), set an internal target (**SLO**), and put a **customer-facing promise** with teeth (**SLA**). Use **tables** for reference math; use **boxes** for mental models and decisions.
+
+<SlaUptimeCalculator />
+
+## The restaurant analogy
+
+<MetricTable
+  title="Delivery promise → SLI / SLO / SLA"
+  subtitle="Same story: measure reality, set an internal bar, promise something with a consequence."
+  columns={['Concept', 'Restaurant', 'Your service']}
+  rows={[
+    ['SLI', 'Measured delivery time per order (28 min, 32 min, …)', 'Measured p99 latency, success ratio, freshness lag, …'],
+    ['SLO', 'Internal goal: 95% of orders in under 30 minutes', 'Internal goal: 99.9% of requests faster than 200 ms over 30 days'],
+    ['SLA', 'Public promise: late → meal comped / refund', 'Contract: miss uptime → credits; defines how you measure and exclude events'],
+  ]}
+/>
+
+## Understanding the hierarchy
+
+<ReliabilityPillarBoxes />
+
+<Callout variant="tip" title="Key insight: SLO should be stricter than SLA">
+Keep **SLO stricter than SLA** (tighter availability / latency target internally than in the contract). The gap is your **buffer** before you pay credits, lose trust, or breach contract — and before on-call is fighting fires in public.
+</Callout>
+
+## SLI: Service Level Indicators
+
+An **SLI** answers: *“How is the service behaving, in a way users feel?”* Pick a small set of **durable** signals you can alert and improve.
+
+<MetricTable
+  title="Common SLIs"
+  subtitle="Formulas are illustrative — define “good” events precisely (e.g. which status codes count as success)."
+  columns={['SLI', 'What it captures', 'Typical use']}
+  compact
+  rows={[
+    ['Availability', 'Successful requests ÷ total requests (or uptime probes)', 'Almost every user-facing service'],
+    ['Latency', 'Time from request to useful response (often p95 / p99)', 'APIs, gateways, checkout'],
+    ['Throughput', 'Sustained work completed (RPS, jobs/sec)', 'Batch, streaming, workers'],
+    ['Error rate', 'Failed or bad responses ÷ total', 'APIs, payments, writes'],
+    ['Durability', 'Data retained correctly ÷ data entrusted', 'Blob, DB, backups'],
+    ['Freshness', 'Age of data seen by users vs source of truth', 'Search indexes, caches, analytics'],
+  ]}
+/>
+
+### Choosing good SLIs
+
+<div className="not-prose my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border border-emerald-300/50 bg-emerald-500/10 p-5 ring-1 ring-emerald-500/20 dark:border-emerald-800/40 dark:bg-emerald-500/15">
+    <p className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">
+      <span className="text-lg" aria-hidden>✓</span>
+      Strong SLI traits
+    </p>
+    <ul className="list-inside list-disc space-y-2 text-sm text-emerald-950 dark:text-emerald-50">
+      <li>Tied to **user-visible** outcomes</li>
+      <li>**Measurable** with agreed definitions</li>
+      <li>**Actionable** — teams can improve it</li>
+      <li>**Explainable** to PMs and leadership</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border border-rose-300/50 bg-rose-500/10 p-5 ring-1 ring-rose-500/20 dark:border-rose-900/40 dark:bg-rose-500/15">
+    <p className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-rose-800 dark:text-rose-300">
+      <span className="text-lg" aria-hidden>⚠</span>
+      Weak SLI choices
+    </p>
+    <ul className="list-inside list-disc space-y-2 text-sm text-rose-950 dark:text-rose-50">
+      <li>Raw **CPU %** without user link</li>
+      <li>**Lines of code**, deploy count as “quality”</li>
+      <li>**Uptime** without defining “up” or scope</li>
+      <li>Too many SLIs → noise and alert fatigue</li>
+    </ul>
+  </div>
+</div>
+
+<Callout variant="tip" title="Start small">
+Aim for **3–5** SLIs that cover **availability**, **latency**, and **correctness/errors** before adding exotic metrics.
+</Callout>
+
+## SLO: Service Level Objectives
+
+An **SLO** is a **target** for an SLI over a **window** (rolling 30 days, calendar month, quarter).
+
+<div className="not-prose my-6 rounded-2xl border border-violet-300/50 bg-gradient-to-br from-violet-500/10 to-fuchsia-500/5 p-5 dark:border-violet-800/40">
+  <p className="text-xs font-bold uppercase tracking-wide text-violet-800 dark:text-violet-300">Decompose one SLO sentence</p>
+  <p className="mt-2 font-mono text-sm font-semibold text-foreground sm:text-base">
+    <span className="rounded bg-violet-500/20 px-1.5 text-violet-900 dark:text-violet-100">99.9%</span>
+    {' '}of requests have latency{' '}
+    <span className="rounded bg-violet-500/20 px-1.5 text-violet-900 dark:text-violet-100">under 200 ms</span>
+    , measured over{' '}
+    <span className="rounded bg-violet-500/20 px-1.5 text-violet-900 dark:text-violet-100">30 rolling days</span>.
+  </p>
+  <ul className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+    <li><strong className="text-foreground">Target</strong> — the bar (99.9%)</li>
+    <li><strong className="text-foreground">SLI</strong> — what is measured (e.g. under 200 ms)</li>
+    <li><strong className="text-foreground">Window</strong> — when you reset the story</li>
+  </ul>
+</div>
+
+### The nines (availability targets)
+
+<MetricTable
+  title="Availability tiers (reference)"
+  subtitle="Downtime budgets for a non–leap year; monthly ≈ 30 days for napkin math."
+  columns={['Availability', 'Max downtime / year', 'Max downtime / month (≈)', 'Example context']}
+  compact
+  rows={[
+    ['99% (two 9s)', '3.65 days', '~7.3 hours', 'Internal tools, best-effort'],
+    ['99.9% (three 9s)', '8.76 hours', '~43.8 minutes', 'Many SaaS web apps'],
+    ['99.95%', '4.38 hours', '~21.9 minutes', 'Stricter B2B, some clouds (varies)'],
+    ['99.99% (four 9s)', '52.6 minutes', '~4.4 minutes', 'Payments, critical APIs'],
+    ['99.999% (five 9s)', '5.26 minutes', '~26 seconds', 'Telco-grade, niche systems'],
+  ]}
+/>
+
+<Callout variant="warning" title="Each nine is expensive">
+Moving **99.9% → 99.99%** is not “10% better” — it’s roughly **10× less** allowed bad minutes. Expect **redundancy**, **testing**, **runbooks**, and **on-call** cost to jump.
+</Callout>
+
+## Error budgets
+
+**Error budget** = allowed **unreliability** = **100% − SLO target** over the same window.
+
+<MetricTable
+  title="Error budget — quick math"
+  columns={['Piece', 'Example']}
+  rows={[
+    ['SLO', '99.9% success over 30 days'],
+    ['Budget', '0.1% of time can be “bad” by definition'],
+    ['In minutes (30 d)', '~43.2 minutes of allowed “budget burn” (if all modeled as downtime)'],
+  ]}
+/>
+
+<div className="not-prose my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border border-emerald-300/50 bg-emerald-500/10 p-5 dark:border-emerald-800/40 dark:bg-emerald-500/15">
+    <p className="mb-2 flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-100">
+      <span aria-hidden>✓</span>
+      Budget available
+    </p>
+    <ul className="list-inside list-disc space-y-1.5 text-sm text-muted-foreground">
+      <li>Ship features and refactors</li>
+      <li>Run controlled experiments</li>
+      <li>Accept some risk while monitoring burn rate</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border border-amber-300/50 bg-amber-500/10 p-5 dark:border-amber-800/40 dark:bg-amber-500/15">
+    <p className="mb-2 flex items-center gap-2 font-bold text-amber-900 dark:text-amber-100">
+      <span aria-hidden>⚠</span>
+      Budget low or exhausted
+    </p>
+    <ul className="list-inside list-disc space-y-1.5 text-sm text-muted-foreground">
+      <li>Freeze risky deploys; focus on reliability</li>
+      <li>Incident response, load shedding, capacity</li>
+      <li>Improve tests, SLO definitions, and tooling</li>
+    </ul>
+  </div>
+</div>
+
+## SLA: Service Level Agreements
+
+An **SLA** is a **contract**: what you promise, **how** you measure it, **exclusions**, and **remedies** (usually credits).
+
+<MetricTable
+  title="Published SLA examples (illustrative)"
+  subtitle="Always read the current legal text — numbers and remedies change."
+  columns={['Provider', 'Uptime figure (typical)', 'Remedy pattern']}
+  compact
+  rows={[
+    ['AWS EC2 (region)', '99.99%', 'Tiered service credits below threshold'],
+    ['Google Cloud (many SKUs)', '99.95%', 'Credits scaled by monthly uptime %'],
+    ['Stripe', '99.99%', 'Credits for extended outages per terms'],
+    ['Slack', '99.99%', 'Downtime-based credits per policy'],
+  ]}
+/>
+
+<div className="not-prose my-6 rounded-2xl border border-amber-200/60 bg-amber-500/5 p-5 dark:border-amber-800/40">
+  <p className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-900 dark:text-amber-200">SLA checklist (box these in contracts)</p>
+  <ul className="grid gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+    <li className="flex gap-2"><span className="text-emerald-600" aria-hidden>✓</span> SLA looser than internal SLO</li>
+    <li className="flex gap-2"><span className="text-emerald-600" aria-hidden>✓</span> Clear measurement &amp; endpoints</li>
+    <li className="flex gap-2"><span className="text-emerald-600" aria-hidden>✓</span> Maintenance &amp; force majeure exclusions</li>
+    <li className="flex gap-2"><span className="text-emerald-600" aria-hidden>✓</span> Credit formula &amp; claim window</li>
+    <li className="flex gap-2"><span className="text-emerald-600" aria-hidden>✓</span> Escalation &amp; comms expectations</li>
+    <li className="flex gap-2"><span className="text-emerald-600" aria-hidden>✓</span> Regular review with product &amp; legal</li>
+  </ul>
+</div>
+
+## Putting it together: e-commerce checkout
+
+<div className="not-prose my-6 space-y-4">
+  <div className="rounded-2xl border border-sky-300/50 bg-sky-500/10 p-5 dark:border-sky-800/40">
+    <p className="text-xs font-bold uppercase tracking-wide text-sky-800 dark:text-sky-300">SLIs — what we measure</p>
+    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-foreground">
+      <li><strong>Availability:</strong> % checkout API requests that succeed (defined 2xx/3xx)</li>
+      <li><strong>Latency:</strong> time to complete checkout (e.g. p99)</li>
+      <li><strong>Errors:</strong> % failed payment or inventory holds</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border border-violet-300/50 bg-violet-500/10 p-5 dark:border-violet-800/40">
+    <p className="text-xs font-bold uppercase tracking-wide text-violet-800 dark:text-violet-300">SLOs — internal targets</p>
+    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-foreground">
+      <li><strong>Availability:</strong> 99.95% over 30 days</li>
+      <li><strong>Latency:</strong> p99 under 500 ms</li>
+      <li><strong>Payment errors:</strong> under 0.1% of attempts</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border border-amber-300/50 bg-amber-500/10 p-5 dark:border-amber-800/40">
+    <p className="text-xs font-bold uppercase tracking-wide text-amber-900 dark:text-amber-200">SLA — customer promise</p>
+    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-foreground">
+      <li><strong>Guarantee:</strong> 99.9% monthly uptime (stricter SLO leaves buffer)</li>
+      <li><strong>Remedy:</strong> e.g. 10% credit if below 99.9%, 25% if below 99.5%</li>
+      <li><strong>Exclusions:</strong> scheduled maintenance, customer-caused issues, force majeure</li>
+    </ul>
+  </div>
+</div>
+
+## Key takeaways
+
+<SummaryBox title="SLI / SLO / SLA — recap">
+- **SLI** = credible **metric** of user-observable behavior.
+- **SLO** = **internal** target on that metric over a **window** — drives error budget and engineering trade-offs.
+- **SLA** = **external** commitment with **remedies** — keep it **easier to hit** than your SLO.
+- **Error budgets** connect reliability to **velocity**: budget healthy → ship; budget burning → stabilize.
+- More **nines** are **exponentially** costly — negotiate realistic targets.
+- Keep the set of SLIs **small** and **owned**; revisit after major launches or incidents.
+</SummaryBox>

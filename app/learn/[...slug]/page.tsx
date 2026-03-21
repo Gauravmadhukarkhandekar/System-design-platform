@@ -18,6 +18,8 @@ import { SyncAsyncWorkflow } from '@/components/SyncAsyncWorkflow';
 import { BackOfEnvelopeCalculator } from '@/components/BackOfEnvelopeCalculator';
 import { CapacityHeadroomBar } from '@/components/CapacityHeadroomBar';
 import { CapacityStrategyCards, KeyCapacityMetricsGrid } from '@/components/CapacityVisualBlocks';
+import { ReliabilityPillarBoxes } from '@/components/ReliabilityPillarBoxes';
+import { SlaUptimeCalculator } from '@/components/SlaUptimeCalculator';
 import { MetricTable } from '@/components/MetricTable';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
@@ -62,6 +64,8 @@ const mdxComponents = {
   CapacityHeadroomBar,
   CapacityStrategyCards,
   KeyCapacityMetricsGrid,
+  ReliabilityPillarBoxes,
+  SlaUptimeCalculator,
   MetricTable,
   table: MdxTable,
 };

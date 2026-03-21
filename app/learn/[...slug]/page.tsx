@@ -16,6 +16,8 @@ import { ScalingMindsetExplorer } from '@/components/ScalingMindsetExplorer';
 import { SyncAsyncSimulator } from '@/components/SyncAsyncSimulator';
 import { SyncAsyncWorkflow } from '@/components/SyncAsyncWorkflow';
 import { BackOfEnvelopeCalculator } from '@/components/BackOfEnvelopeCalculator';
+import { CapacityHeadroomBar } from '@/components/CapacityHeadroomBar';
+import { CapacityStrategyCards, KeyCapacityMetricsGrid } from '@/components/CapacityVisualBlocks';
 import { MetricTable } from '@/components/MetricTable';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
@@ -57,6 +59,9 @@ const mdxComponents = {
   SyncAsyncSimulator,
   SyncAsyncWorkflow,
   BackOfEnvelopeCalculator,
+  CapacityHeadroomBar,
+  CapacityStrategyCards,
+  KeyCapacityMetricsGrid,
   MetricTable,
   table: MdxTable,
 };

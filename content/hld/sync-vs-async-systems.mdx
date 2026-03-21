@@ -1,0 +1,124 @@
+# Synchronous vs Asynchronous Systems
+
+**When should the caller wait** for a result, and **when** should it fire-and-forget and get an answer later? That choice shapes **latency**, **throughput**, **failure handling**, and **how services talk to each other**.
+
+Narrative sections explain the ideas; **tables** are used where comparing options in rows and columns actually helps.
+
+## The restaurant analogy
+
+<MetricTable
+  title="Fine dining vs food court"
+  subtitle="Same idea as sync vs async: blocking wait vs acknowledge-then-continue."
+  columns={['Style', 'What happens', 'Maps to']}
+  rows={[
+    ['Fine dining (sync)', 'Waiter takes your order, stays tied to the kitchen until plates are ready, then serves you', 'Caller blocks until the operation completes'],
+    ['Food court (async)', 'You order, get a buzzer, sit down; kitchen works while you wait elsewhere; buzzer when ready', 'Caller continues; result arrives later (callback, promise, message, webhook)'],
+  ]}
+/>
+
+**Definitions:**
+
+- **Synchronous** — the **caller waits** (conceptually blocks) until the callee finishes and returns.
+- **Asynchronous** — the **caller gets control back quickly**; completion is signaled later (event loop, queue consumer, notification).
+
+## Visual comparison (workflow)
+
+**Synchronous** — one straight line: send → work (caller blocked) → full response.
+
+**Asynchronous** — fast ack, then **parallel paths**: the caller keeps moving while a **background pipeline** (queue → worker → delivery) finishes the job.
+
+<SyncAsyncWorkflow />
+
+## When to use each
+
+<MetricTable
+  title="Rule of thumb"
+  subtitle="If the user must have the result to move on, bias sync (or sync-looking UX with fast servers). If the result can arrive later, bias async."
+  columns={['Bias synchronous', 'Bias asynchronous']}
+  rows={[
+    ['Result needed immediately (login, payment auth, search as you type)', 'Long work (video transcoding, big reports)'],
+    ['Work is usually fast (e.g. well under your SLO)', 'Fire-and-forget is OK (analytics, emails, fan-out)'],
+    ['Strict ordering is required in one thread of execution', 'You need high throughput and decoupled consumers'],
+    ['Simple request–response and easier debugging', 'Retries, DLQs, and idempotency are acceptable trade-offs'],
+  ]}
+/>
+
+<Callout variant="tip" title="Most production systems mix both">
+**User-facing paths** are often synchronous *from the user’s perspective* (one HTTP round trip), while **everything behind** the API may be async (queues, events, workers).
+</Callout>
+
+## Real-world examples
+
+<MetricTable
+  title="Sync slice vs async slice"
+  subtitle="Typical split: critical path inline; everything else out of band."
+  columns={['Domain', 'Usually synchronous', 'Usually asynchronous']}
+  compact
+  accentLastColumn
+  rows={[
+    ['E-commerce checkout', 'Payment authorization, inventory hold, order row', 'Confirmation email, analytics, invoice PDF, search index'],
+    ['Social post', 'Persist post, return id / URL', 'Fan-out to feeds, image variants, push notifications'],
+    ['Video upload', 'Accept bytes, return upload / asset id', 'Transcoding, thumbnails, moderation, CDN propagation'],
+    ['Ride-sharing', 'Nearby drivers, fare estimate, session start', 'Matching refinements, location streams, post-trip billing'],
+  ]}
+/>
+
+## Async communication patterns
+
+<MetricTable
+  title="Patterns you’ll name in interviews"
+  subtitle="All are “async” in the sense that producers don’t wait for consumers to finish in the same call stack."
+  columns={['Pattern', 'Idea', 'Examples']}
+  rows={[
+    ['Message queue', 'Producer enqueues; consumer processes when ready; often at-least-once delivery', 'RabbitMQ, Amazon SQS, Azure Service Bus'],
+    ['Pub/Sub', 'Publish to a topic; many subscribers receive independently', 'Kafka, Google Pub/Sub, Redis Pub/Sub'],
+    ['Event-driven', 'Services emit facts; others react — loose coupling in time and space', 'EventBridge, Kafka, NATS'],
+    ['Webhooks', 'Server POSTs to your URL when something happens — push to the integrator', 'Stripe, GitHub, payment providers'],
+  ]}
+/>
+
+## Trade-offs
+
+<MetricTable
+  title="Synchronous vs asynchronous (high level)"
+  subtitle="✓ = relative strength; ⚠ = typical cost or caveat (not universal)."
+  columns={['Aspect', 'Synchronous', 'Asynchronous']}
+  compact
+  rows={[
+    ['Complexity', 'Simpler mental model and call stacks', 'Queues, consumers, retries, observability'],
+    ['Perceived latency', 'User waits for full work if inline', 'Fast ack; work finishes later'],
+    ['Throughput ceiling', 'Limited by slowest hop in the chain', 'Workers scale independently; absorb bursts'],
+    ['Coupling', 'Tighter in time (caller waits)', 'Looser in time; contracts via messages/events'],
+    ['Errors', 'Immediate success/failure to caller', 'Retries, DLQs, idempotency, duplicate handling'],
+    ['Debugging', 'Single request trace (often)', 'Needs correlation ids, distributed tracing'],
+  ]}
+/>
+
+## Common mistakes
+
+<MetricTable
+  title="Avoid these async pitfalls"
+  subtitle="Async is powerful when the problem fits; painful when applied blindly."
+  columns={['Anti-pattern', 'Why it hurts', 'What to do instead']}
+  compact
+  rows={[
+    ['Everything async from day one', 'Harder debugging and ops for no gain', 'Start sync; introduce queues/events when load or decoupling demands it'],
+    ['Ignoring ordering', 'Duplicates and out-of-order events corrupt state', 'Partitions, sequence numbers, idempotent handlers, or explicit ordering guarantees'],
+    ['No retries / DLQ', 'Lost or poison messages', 'Backoff, max attempts, dead-letter queue, alerts'],
+    ['Blocking I/O inside async workers', 'Starves consumers; kills throughput', 'Non-blocking I/O; async all the way down in hot paths'],
+  ]}
+/>
+
+## Interactive: compare sync vs async
+
+<SyncAsyncSimulator />
+
+## Key takeaways
+
+<SummaryBox title="Sync vs async — recap">
+- **Synchronous** keeps the model simple and gives **immediate** feedback, but **ties up** the caller and can **limit throughput**.
+- **Asynchronous** improves **responsiveness**, **decoupling**, and **scale-out**, but needs **infrastructure** (brokers, workers) and **rigor** (retries, idempotency, tracing).
+- **Real systems combine both**: sync (or fast) **edges** for users; **async internals** for email, analytics, media, and fan-out.
+- Choose using **latency expectations**, **throughput**, **failure tolerance**, and **team/ops** maturity — not hype.
+- Know the vocabulary: **queues**, **pub/sub**, **event-driven**, **webhooks** — and when each fits.
+</SummaryBox>

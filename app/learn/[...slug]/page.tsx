@@ -10,6 +10,9 @@ import { Card } from '@/components/Card';
 import { Callout } from '@/components/Callout';
 import { SummaryBox } from '@/components/SummaryBox';
 import { ComparisonTable } from '@/components/ComparisonTable';
+import { LatencyThroughputSimulator } from '@/components/LatencyThroughputSimulator';
+import { MetricTable } from '@/components/MetricTable';
+import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import matter from 'gray-matter';
@@ -43,6 +46,9 @@ const mdxComponents = {
   Callout,
   SummaryBox,
   ComparisonTable,
+  LatencyThroughputSimulator,
+  MetricTable,
+  table: MdxTable,
 };
 
 const contentDir = path.join(process.cwd(), 'content');

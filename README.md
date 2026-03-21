@@ -20,6 +20,17 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### If you see `vendor-chunks` or `Cannot find module` errors
+
+The Next.js build cache can get out of sync. Clear it and restart:
+
+```bash
+npm run clean
+npm run dev
+```
+
+Or one step: `npm run dev:clean`
+
 ## Build & Export
 
 ```bash

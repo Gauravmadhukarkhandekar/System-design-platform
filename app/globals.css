@@ -116,28 +116,7 @@
   @apply my-8 border-border;
 }
 
-/* Tables (markdown in MDX) */
-.content-page table {
-  @apply w-full my-6 min-w-[28rem] text-sm border-collapse rounded-xl overflow-hidden border border-border shadow-sm;
-}
-.content-page thead {
-  @apply bg-sky-100/80 dark:bg-sky-900/30;
-}
-.content-page thead th {
-  @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-foreground border-b border-border;
-}
-.content-page tbody tr {
-  @apply border-b border-border/60 last:border-b-0;
-}
-.content-page tbody tr:nth-child(odd) {
-  @apply bg-background;
-}
-.content-page tbody tr:nth-child(even) {
-  @apply bg-muted/35;
-}
-.content-page tbody td {
-  @apply px-4 py-3 text-foreground/90 align-top;
-}
-.content-page tbody td:first-child {
-  @apply font-semibold text-foreground;
+/* Markdown tables: styled via MdxTable (not-prose wrapper). Prose table rules stay for edge cases. */
+.prose :where(table):not(:where([class~="not-prose"] *)) {
+  @apply w-full;
 }

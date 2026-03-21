@@ -15,6 +15,7 @@ import { RequestLifecycleSimulator } from '@/components/RequestLifecycleSimulato
 import { ScalingMindsetExplorer } from '@/components/ScalingMindsetExplorer';
 import { SyncAsyncSimulator } from '@/components/SyncAsyncSimulator';
 import { SyncAsyncWorkflow } from '@/components/SyncAsyncWorkflow';
+import { BackOfEnvelopeCalculator } from '@/components/BackOfEnvelopeCalculator';
 import { MetricTable } from '@/components/MetricTable';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
@@ -55,6 +56,7 @@ const mdxComponents = {
   ScalingMindsetExplorer,
   SyncAsyncSimulator,
   SyncAsyncWorkflow,
+  BackOfEnvelopeCalculator,
   MetricTable,
   table: MdxTable,
 };

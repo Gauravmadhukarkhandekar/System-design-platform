@@ -11,6 +11,7 @@ import { Callout } from '@/components/Callout';
 import { SummaryBox } from '@/components/SummaryBox';
 import { ComparisonTable } from '@/components/ComparisonTable';
 import { LatencyThroughputSimulator } from '@/components/LatencyThroughputSimulator';
+import { RequestLifecycleSimulator } from '@/components/RequestLifecycleSimulator';
 import { MetricTable } from '@/components/MetricTable';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
@@ -47,6 +48,7 @@ const mdxComponents = {
   SummaryBox,
   ComparisonTable,
   LatencyThroughputSimulator,
+  RequestLifecycleSimulator,
   MetricTable,
   table: MdxTable,
 };

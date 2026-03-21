@@ -21,6 +21,7 @@ import { CapacityStrategyCards, KeyCapacityMetricsGrid } from '@/components/Capa
 import { ReliabilityPillarBoxes } from '@/components/ReliabilityPillarBoxes';
 import { SlaUptimeCalculator } from '@/components/SlaUptimeCalculator';
 import { AcidPropertiesCards } from '@/components/AcidPropertiesCards';
+import { BasePropertiesCards } from '@/components/BasePropertiesCards';
 import { MetricTable } from '@/components/MetricTable';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
@@ -68,6 +69,7 @@ const mdxComponents = {
   ReliabilityPillarBoxes,
   SlaUptimeCalculator,
   AcidPropertiesCards,
+  BasePropertiesCards,
   MetricTable,
   table: MdxTable,
 };

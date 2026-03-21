@@ -1,0 +1,90 @@
+# ACID vs BASE Properties
+
+Two **names for consistency / availability trade-offs**: **ACID** (strong transactional guarantees) vs **BASE** (availability-first, **eventual** alignment). They are **not** “SQL vs NoSQL” laws — they describe **design goals** and **typical** distributed behavior.
+
+For **A / C / I / D** spelled out with examples, see [Database Fundamentals](/learn/hld/database-fundamentals) (same ACID cards appear below for side-by-side reading).
+
+## Bank vs social media
+
+<MetricTable
+  title="When correctness beats speed — and the reverse"
+  subtitle="Caricature — real banks use distributed systems; real social stacks still protect money elsewhere."
+  columns={['Model', 'Analogy', 'Idea']}
+  rows={[
+    ['ACID', 'Bank transfer — must fully succeed or fully undo; no half-moved money', 'Transactions: all-or-nothing, durable, isolated — strong guarantees'],
+    ['BASE', 'Like counts — 999 vs 1000 for a moment is OK; feed must stay up', 'Availability + partition tolerance: soft state, eventual agreement across replicas'],
+  ]}
+/>
+
+## ACID properties
+
+**ACID** keeps **transactional** updates **safe** under crashes and concurrency — the default story for relational OLTP engines (with **isolation level** nuances).
+
+<AcidPropertiesCards />
+
+## BASE properties
+
+**BASE** is a **mnemonic** for systems that favor **staying available** and **scaling out**, accepting **temporary** divergence between copies of data.
+
+<BasePropertiesCards />
+
+<Callout variant="tip" title="BASE is not “no rules”">
+You still define **conflict resolution**, **idempotency**, **versioning**, and **SLAs**. “Eventual” means **converge with a policy**, not “anything goes.”
+</Callout>
+
+## Head-to-head comparison
+
+<MetricTable
+  title="ACID vs BASE — coarse comparison"
+  subtitle="Many products blend patterns (e.g. ACID in one service, BASE-shaped cache or feed beside it)."
+  columns={['Aspect', 'ACID (typical)', 'BASE (typical)']}
+  compact
+  rows={[
+    ['Consistency story', 'Strong per transaction (choose isolation level)', 'Eventual across replicas / read models'],
+    ['Availability under partitions', 'May block or fail transactions to stay consistent', 'Often responds with best-known data (stale OK)'],
+    ['Horizontal scale', 'Harder at extreme write fan-out (not impossible)', 'Often designed for partition + replicate'],
+    ['Sweet spot', 'Finance, inventory, bookings — correctness', 'Feeds, metrics, pre-checkout cart — uptime'],
+    ['Example engines', 'PostgreSQL, MySQL, SQL Server, …', 'Cassandra, Dynamo-style, some document / KV deployments'],
+  ]}
+/>
+
+<Callout variant="warning" title="Don’t stereotype products">
+**MongoDB**, **DynamoDB**, and others offer **varying** transaction and consistency knobs. The **label** on the database matters less than the **guarantees** you configure and test.
+</Callout>
+
+## When to lean which way
+
+<div className="not-prose my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border border-emerald-300/50 bg-emerald-500/10 p-5 ring-1 ring-emerald-500/15 dark:border-emerald-800/40">
+    <p className="mb-3 flex items-center gap-2 font-bold text-emerald-900 dark:text-emerald-100">
+      <span className="text-lg" aria-hidden>✓</span>
+      Lean ACID when…
+    </p>
+    <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Financial ledger, payments, settlements</li>
+      <li>Inventory and reservations (no oversell)</li>
+      <li>Any domain where wrong once is unacceptable</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border border-teal-300/50 bg-teal-500/10 p-5 ring-1 ring-teal-500/15 dark:border-teal-800/40">
+    <p className="mb-3 flex items-center gap-2 font-bold text-teal-900 dark:text-teal-100">
+      <span className="text-lg" aria-hidden>✓</span>
+      Lean BASE-shaped when…
+    </p>
+    <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Social timelines, recommendations, counters</li>
+      <li>High-volume metrics and analytics ingress</li>
+      <li>Pre-commit UX (cart, drafts) where staleness is bounded and visible</li>
+    </ul>
+  </div>
+</div>
+
+## Key takeaways
+
+<SummaryBox title="ACID vs BASE — recap">
+- **ACID** = **reliable transactions**: atomic, consistent, isolated, durable — correctness under failure and concurrency.
+- **BASE** = **basically available**, **soft state**, **eventually consistent** — favor uptime and scale; tolerate **temporary** divergence.
+- **ACID** is harder to stretch to planet-scale writes; **BASE** trades **strong** global consistency for **availability** and partition tolerance (see **CAP** in practice, not as a binary theorem exam).
+- **Polyglot** stacks: **ACID** for orders and money; **BASE-shaped** stores for feeds, cache, and derived views.
+- Pick from **invariants and blast radius**, not slogans — **measure** and **document** what you actually guarantee.
+</SummaryBox>

@@ -1,0 +1,103 @@
+# Edge Computing
+
+Moving computation closer to users for lower latency and better performance.
+
+## The coffee shop analogy
+
+<MetricTable
+  title="Simple analogy"
+  columns={['Model', 'What it means']}
+  rows={[
+    [
+      'Traditional (Origin Server)',
+      'Order coffee, barista ships it from headquarters across the country. Takes forever.',
+    ],
+    [
+      'Edge Computing',
+      'Coffee shops in every neighborhood. Your order is prepared at the nearest location. Fast and fresh.',
+    ],
+  ]}
+/>
+
+**Edge computing:** running code and storing data at locations geographically close to users, rather than in a centralized data center. Part of a CDN strategy for dynamic content.
+
+## Edge vs origin
+
+<MetricTable
+  title="Edge vs Origin"
+  columns={['Aspect', 'Origin Server', 'Edge']}
+  compact
+  rows={[
+    ['Location', 'Centralized data center', '200+ locations globally'],
+    ['Latency', '100-300ms', '10-50ms'],
+    ['State', 'Full database access', 'Limited (KV stores, caches)'],
+    ['Compute', 'Full server capabilities', 'Limited execution time'],
+    ['Cost', 'Standard hosting', 'Pay per request'],
+  ]}
+/>
+
+## Use cases
+
+<MetricTable
+  title="Use cases"
+  columns={['Use case', 'Description']}
+  compact
+  rows={[
+    ['A/B Testing', 'Route users to different variants at the edge, no origin roundtrip'],
+    ['Authentication', 'Validate JWT tokens at the edge, reject invalid requests early'],
+    ['Geolocation', 'Personalize content based on user location'],
+    ['Bot Protection', 'Block malicious traffic before it reaches origin'],
+    ['Image Optimization', 'Resize and format images on the fly'],
+    ['API Aggregation', 'Combine multiple API calls at the edge'],
+  ]}
+/>
+
+## Edge platforms
+
+<MetricTable
+  title="Edge platforms"
+  columns={['Platform', 'Details']}
+  compact
+  rows={[
+    ['Cloudflare Workers', 'V8 isolates, KV storage, Durable Objects. 0ms cold start.'],
+    ['Vercel Edge Functions', 'Built on Cloudflare. Integrates with Next.js.'],
+    ['AWS CloudFront Functions', 'Lightweight functions at CloudFront edge.'],
+    ['Fastly Compute@Edge', 'WebAssembly-based edge compute.'],
+  ]}
+/>
+
+## Limitations
+
+<MetricTable
+  title="Limitations"
+  columns={['Area', 'Detail']}
+  compact
+  rows={[
+    [
+      '⚠ Limited execution time',
+      'Usually 50ms-30s max. Not for long-running tasks.',
+    ],
+    [
+      '⚠ No traditional database',
+      'Use KV stores, Durable Objects, or call origin for DB access.',
+    ],
+    [
+      '⚠ Cold starts (some platforms)',
+      "Lambda@Edge has cold starts. Workers don't.",
+    ],
+    [
+      '⚠ Debugging complexity',
+      'Distributed execution makes debugging harder.',
+    ],
+  ]}
+/>
+
+## Key takeaways
+
+<SummaryBox title="Key takeaways">
+- Edge computing runs code close to users for low latency
+- Great for authentication, A/B testing, geo-personalization
+- Limited execution time and storage compared to origin
+- Cloudflare Workers and Vercel Edge are popular choices
+- Use edge for lightweight, latency-sensitive operations
+</SummaryBox>

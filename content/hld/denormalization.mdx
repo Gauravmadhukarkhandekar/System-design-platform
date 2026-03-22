@@ -1,0 +1,130 @@
+# Denormalization
+
+**Denormalization** means **intentionally storing redundant data** so hot reads avoid **JOINs** and extra round-trips. It is the **mirror** of classical **normalization**: you trade **storage and update discipline** for **read latency** and **simpler query shapes** — common in **read-heavy**, **large-scale** systems once you have **evidence** of pain.
+
+## The library analogy
+
+<MetricTable
+  title="Simple analogy"
+  subtitle="Not a substitute for formal schema design — good for intuition."
+  columns={['Shape', 'Mental model']}
+  rows={[
+    [
+      'Normalized (central card catalog)',
+      'One master catalog: to learn a book’s author you follow a reference to the author card. Clean and no duplication, but more lookups (like JOINs).',
+    ],
+    [
+      'Denormalized (author on every cover)',
+      'Author bio printed on each book’s cover. Redundant and harder to fix a typo everywhere, but a single glance gives you what you need — faster reads, messier updates.',
+    ],
+  ]}
+/>
+
+## What is denormalization?
+
+**Normalization** splits facts into tables and uses **foreign keys** to avoid repeating the same data. **Denormalization** **copies** or **embeds** data so a read path can satisfy a screen or API **without joining** many large tables.
+
+<div className="not-prose my-6 grid gap-4 md:grid-cols-2">
+  <div className="rounded-xl border border-emerald-300/50 bg-emerald-500/10 p-4 dark:border-emerald-800/40">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-emerald-800 dark:text-emerald-300">Benefits</p>
+    <ul className="list-inside list-disc space-y-1.5 text-sm text-muted-foreground">
+      <li><strong className="text-foreground">Faster reads</strong> — fewer or no JOINs on critical paths</li>
+      <li><strong className="text-foreground">Simpler queries</strong> — one table or a shallow shape for the app</li>
+      <li><strong className="text-foreground">Less load on primary OLTP</strong> — when paired with caching or read models</li>
+      <li><strong className="text-foreground">Scales reads</strong> — duplicate read-optimized shapes across shards or replicas</li>
+    </ul>
+  </div>
+  <div className="rounded-xl border border-rose-300/50 bg-rose-500/10 p-4 dark:border-rose-900/40">
+    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-rose-800 dark:text-rose-300">Trade-offs</p>
+    <ul className="list-inside list-disc space-y-1.5 text-sm text-muted-foreground">
+      <li><strong className="text-foreground">Redundancy</strong> — same fact stored in more than one place</li>
+      <li><strong className="text-foreground">Harder updates</strong> — must update every copy (or accept staleness)</li>
+      <li><strong className="text-foreground">Consistency risk</strong> — copies can disagree until pipelines catch up</li>
+      <li><strong className="text-foreground">More storage</strong> — wider rows and duplicated strings or blobs</li>
+    </ul>
+  </div>
+</div>
+
+## Common techniques
+
+<MetricTable
+  title="Patterns you will see in production"
+  columns={['Technique', 'Idea', 'Example']}
+  compact
+  rows={[
+    [
+      'Embed related data',
+      'Store a slice of another entity on the row you read most.',
+      'orders.customer_name and orders.shipping_city alongside customer_id so order history pages skip JOIN users / addresses.',
+    ],
+    [
+      'Pre-compute aggregates',
+      'Persist counts, sums, or ratings updated on write or on a schedule.',
+      'products.review_count maintained by triggers, app logic, or stream consumers instead of COUNT(*) on every product page.',
+    ],
+    [
+      'Duplicate across tables',
+      'Copy hot columns into a second table shaped for a specific query.',
+      'posts.author_display_name duplicated from users.display_name for feed rendering.',
+    ],
+    [
+      'Materialized views',
+      'Store the result of a heavy query as a table (refreshed periodically or on demand).',
+      'Warehouse or Postgres-style materialized snapshot used for dashboards; OLTP may use similar ideas with explicit tables.',
+    ],
+  ]}
+/>
+
+```sql
+-- Illustrative: refresh strategy is engine-specific
+CREATE MATERIALIZED VIEW sales_summary AS
+SELECT date_trunc('day', created_at) AS day, SUM(amount) AS revenue
+FROM orders
+GROUP BY 1;
+
+-- Postgres: REFRESH MATERIALIZED VIEW sales_summary;
+```
+
+## When to denormalize
+
+<MetricTable
+  title="Signals that denormalization may pay off"
+  columns={['Signal', 'Why it matters']}
+  compact
+  rows={[
+    [
+      'Read-heavy workload',
+      'When most traffic is SELECT-shaped and JOIN cost dominates, trimming joins helps more than perfect 3NF.',
+    ],
+    [
+      'Slow JOINs at scale',
+      'Large fact tables plus dimension hops: EXPLAIN and p95 latency show repeated expensive plans.',
+    ],
+    [
+      'Infrequent changes to duplicated fields',
+      'If the embedded field rarely changes, update amplification is manageable.',
+    ],
+    [
+      'Eventual consistency is acceptable',
+      'You can tolerate a short lag between “source of truth” and copies (or use outbox / CDC to propagate).',
+    ],
+    [
+      'Stable, known query patterns',
+      'You are not guessing: product and analytics show the same hot paths for months.',
+    ],
+  ]}
+/>
+
+<Callout variant="warning" title="Do not denormalize by default">
+Start **normalized**, **measure** (slow queries, lock waits, replica lag), then **denormalize targeted hot paths**. Premature duplication spreads bugs: inconsistent names, wrong aggregates, and painful migrations.
+</Callout>
+
+## Key takeaways
+
+<SummaryBox title="Denormalization — recap">
+- Denormalization **trades** write and consistency **complexity** for **read performance** and **simpler** access paths.
+- It **reduces JOINs** by **duplicating** or **embedding** data where reads happen.
+- It fits **read-heavy**, **write-light** shapes best — especially when **change frequency** on copied fields is low.
+- You need a **plan** for **updates**: synchronous multi-table writes, **jobs**, **CDC**, or **eventual** reconciliation.
+- **Measure first** — only denormalize **proven** bottlenecks; keep a **clear source of truth** for each fact.
+</SummaryBox>

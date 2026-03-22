@@ -28,6 +28,9 @@ import { CachingStrategiesVisual } from '@/components/CachingStrategiesVisual';
 import { CacheEvictionSimulator } from '@/components/CacheEvictionSimulator';
 import { IsolationComparisonTable, IsolationLevelCards } from '@/components/IsolationLevelsVisual';
 import { DatabaseQuickReferenceTable, PolyglotPersistenceStack } from '@/components/DatabaseChoiceVisual';
+import { LoadBalancerSimulator } from '@/components/LoadBalancerSimulator';
+import { LoadBalancerKnowledgeCheck } from '@/components/LoadBalancerKnowledgeCheck';
+import { LoadBalancerDeploymentTable, LoadBalancerAlgorithmTable } from '@/components/LoadBalancerVisual';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -83,6 +86,10 @@ const mdxComponents = {
   IsolationLevelCards,
   DatabaseQuickReferenceTable,
   PolyglotPersistenceStack,
+  LoadBalancerSimulator,
+  LoadBalancerKnowledgeCheck,
+  LoadBalancerDeploymentTable,
+  LoadBalancerAlgorithmTable,
   table: MdxTable,
 };
 

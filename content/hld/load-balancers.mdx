@@ -1,37 +1,340 @@
 # Load Balancers
 
-## Introduction
+<div className="not-prose mb-6 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+  <span className="rounded-full bg-sky-500/15 px-3 py-1 font-semibold text-sky-800 dark:text-sky-200">System Design Fundamentals · Module 2</span>
+  <span>~15 min read</span>
+  <span className="rounded-full bg-violet-500/15 px-3 py-1 font-semibold text-violet-800 dark:text-violet-200">Comprehensive guide</span>
+</div>
 
-A **load balancer** distributes incoming traffic across multiple servers to improve availability, throughput, and latency. It is a core building block of scalable systems.
+A critical infrastructure component that distributes incoming network traffic across multiple servers, ensuring no single server becomes a bottleneck while maintaining high availability and performance.
 
-## Why Use a Load Balancer
+## What is a load balancer?
 
-- **High availability**: If one server fails, traffic goes to healthy ones.
-- **Horizontal scaling**: Add more servers and the load balancer spreads the load.
-- **Single entry point**: Clients talk to one endpoint (VIP or DNS); the balancer hides the pool of servers.
-
-```mermaid
-flowchart LR
-  Client --> LB[Load Balancer]
-  LB --> S1[Server 1]
-  LB --> S2[Server 2]
-  LB --> S3[Server 3]
-```
-
-## Common Strategies
-
-- **Round robin**: Send each request to the next server in order.
-- **Least connections**: Send to the server with the fewest active connections.
-- **Weighted**: Assign more traffic to more powerful or preferred servers.
-- **IP hash**: Use client IP (or other key) so the same client often hits the same server (session affinity).
-
-<Callout variant="tip" title="Stateless apps">
-If your app is stateless, use round robin or least connections. Sticky sessions (IP hash) make scaling and deploys harder.
+<Callout variant="tip" title="Simple analogy">
+Imagine a busy coffee shop with 5 cashiers. Without a manager, customers randomly pick a line — some cashiers get overwhelmed while others have no one. Now add a manager at the door who directs each customer to the shortest line. That manager is your **load balancer** — it sends each request (customer) to the right server (cashier) so everyone gets served quickly.
 </Callout>
 
-## Summary
+**Load balancer (LB)** is the first point of contact within a data center after the firewall. It receives all incoming requests and intelligently distributes them across a pool of backend servers (worker nodes). This prevents any single server from being overwhelmed, enabling applications to handle millions of requests per second.
+
+### The problem without load balancing
+
+<div className="not-prose my-8 grid gap-4 md:grid-cols-2">
+  <div className="rounded-2xl border-2 border-rose-400/60 bg-rose-500/10 p-5 dark:border-rose-800/50">
+    <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-rose-900 dark:text-rose-100">
+      <span className="text-xl">✗</span> Without load balancer
+    </h3>
+    <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Single server handles ALL traffic</li>
+      <li>Server crash = entire app down</li>
+      <li>Can&apos;t scale beyond one machine</li>
+      <li>No maintenance without downtime</li>
+      <li>Single point of failure</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border-2 border-emerald-400/60 bg-emerald-500/10 p-5 dark:border-emerald-800/50">
+    <h3 className="mb-3 flex items-center gap-2 text-lg font-bold text-emerald-900 dark:text-emerald-100">
+      <span className="text-xl">✓</span> With load balancer
+    </h3>
+    <ul className="list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Traffic distributed across servers</li>
+      <li>Server crash = others handle load</li>
+      <li>Add servers as traffic grows</li>
+      <li>Zero-downtime maintenance</li>
+      <li>High availability ensured</li>
+    </ul>
+  </div>
+</div>
+
+### Why do we need load balancers?
+
+<MetricTable
+  title="Why load balancers matter"
+  columns={['#', 'Benefit', 'Detail']}
+  compact
+  rows={[
+    [
+      '1',
+      'Scalability',
+      'Add more servers behind the LB as traffic grows. Upscaling/downscaling is transparent to end users. No architecture redesign needed.',
+    ],
+    [
+      '2',
+      'High availability',
+      'If servers crash, LB hides failures and routes traffic to healthy servers. System remains available even during partial outages.',
+    ],
+    [
+      '3',
+      'Performance',
+      'Routes requests to servers with lower load for faster response times. Improves resource utilization across all servers.',
+    ],
+    [
+      '4',
+      'Maintainability',
+      'Take individual servers offline for updates, patches, or maintenance without affecting the entire application.',
+    ],
+  ]}
+/>
+
+<Callout variant="info" title="Real-world impact">
+When Amazon runs Prime Day sales, traffic spikes 10–100x normal levels. Load balancers automatically distribute this surge across thousands of servers, preventing crashes and ensuring a seamless shopping experience.
+</Callout>
+
+## How load balancing works
+
+Understanding the step-by-step process of how a load balancer handles requests is crucial for system design interviews.
+
+<MetricTable
+  title="How load balancing works"
+  columns={['Step', 'What happens']}
+  compact
+  rows={[
+    [
+      '1. Traffic reception',
+      'All incoming requests arrive at the load balancer&apos;s public IP or domain (e.g. www.myapp.com resolves to the LB&apos;s IP). The LB acts as a reverse proxy — clients never know about backend servers.',
+    ],
+    [
+      '2. Decision logic (routing algorithm)',
+      'The LB decides which server gets the request using a configured algorithm: Round Robin (sequential), Least Connections (fewest active), IP Hash (sticky sessions), Weighted (based on capacity), or Least Response Time.',
+    ],
+    [
+      '3. Health checks',
+      'LB continuously monitors server health via heartbeat requests (e.g. GET /health). If a server doesn&apos;t respond within the threshold, it&apos;s marked unhealthy and removed from the pool. When it recovers, it&apos;s automatically reintroduced.',
+    ],
+    [
+      '4. Request forwarding',
+      'LB forwards the request to the selected healthy server. Some LBs modify headers, terminate SSL, or add tracing information before forwarding.',
+    ],
+    [
+      '5. Response handling',
+      'The backend server processes the request and returns the response to the LB, which then forwards it to the client. Some responses may be cached or compressed by the LB.',
+    ],
+  ]}
+/>
+
+## See it in action
+
+<LoadBalancerSimulator />
+
+## Types of load balancers
+
+### Layer 4 vs Layer 7 load balancing
+
+Load balancers operate at different OSI layers, each with distinct capabilities and trade-offs.
+
+<div className="not-prose my-8 grid gap-4 lg:grid-cols-2">
+  <div className="rounded-2xl border-2 border-amber-400/60 bg-gradient-to-br from-amber-500/12 to-background p-6 dark:border-amber-700/50">
+    <h3 className="text-lg font-bold text-amber-950 dark:text-amber-100">Layer 4 (Transport Layer)</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Routes based on IP address + TCP/UDP port</li>
+      <li>Does NOT inspect packet content</li>
+      <li>Ultra-fast: millions of requests/sec</li>
+      <li>Protocol agnostic (HTTP, WebSocket, DB, etc.)</li>
+      <li>Lower latency, higher throughput</li>
+      <li>Cannot do content-based routing</li>
+      <li>
+        <strong className="text-foreground">Best for:</strong> Database connections, gaming, high-throughput
+      </li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border-2 border-indigo-400/60 bg-gradient-to-br from-indigo-500/12 to-background p-6 dark:border-indigo-700/50">
+    <h3 className="text-lg font-bold text-indigo-950 dark:text-indigo-100">Layer 7 (Application Layer)</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Inspects HTTP headers, cookies, URLs, body</li>
+      <li>Smart content-based routing decisions</li>
+      <li>Performs SSL/TLS termination</li>
+      <li>Can modify requests and responses</li>
+      <li>Supports A/B testing, canary deployments</li>
+      <li>WAF capabilities, rate limiting</li>
+      <li>
+        <strong className="text-foreground">Best for:</strong> Web apps, APIs, microservices
+      </li>
+    </ul>
+  </div>
+</div>
+
+#### Layer 4 vs Layer 7 — decision example
+
+```http
+// Layer 4: Only sees network data
+Source: 192.168.1.100:54321 → Destination: lb.example.com:443
+Decision: Route to Server A at 10.0.1.5:443 (based on IP/port only)
+
+// Layer 7: Understands application data
+GET /api/users HTTP/1.1
+Host: example.com
+Cookie: session_id=abc123
+
+Decision: /api/* → API servers, /static/* → CDN, Cookie → Same server
+```
+
+### Hardware vs Software vs Cloud
+
+<LoadBalancerDeploymentTable />
+
+## Where to place load balancers
+
+In a typical 3-tier architecture, load balancers can be placed at multiple points for maximum scalability:
+
+<MetricTable
+  title="Where to place load balancers"
+  columns={['#', 'Placement', 'Role']}
+  compact
+  rows={[
+    [
+      '1',
+      'Between users and web servers',
+      'The primary LB that faces the internet. Handles SSL termination, routes HTTP/HTTPS traffic to web servers or API gateways. This is the most common placement.',
+    ],
+    [
+      '2',
+      'Between web and application servers',
+      'Distributes internal requests from web servers to application servers that run business logic. Prevents any single app server from being overwhelmed.',
+    ],
+    [
+      '3',
+      'Between application and database servers',
+      'Routes database queries across read replicas. Ensures database connections are evenly distributed. Often uses Layer 4 LB for performance.',
+    ],
+  ]}
+/>
+
+<Callout variant="tip" title="Key insight">
+Load balancers can potentially be used between **ANY** two services with multiple instances. In microservices architectures, each service may have its own LB (service mesh pattern).
+</Callout>
+
+## Global vs local load balancing
+
+<div className="not-prose my-8 grid gap-4 lg:grid-cols-2">
+  <div className="rounded-2xl border-2 border-teal-400/60 bg-teal-500/10 p-6 dark:border-teal-800/50">
+    <h3 className="text-lg font-bold text-teal-900 dark:text-teal-100">Global (GSLB)</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Distributes traffic across geographic regions</li>
+      <li>Routes users to nearest data center</li>
+      <li>Handles region/zone failover</li>
+      <li>Uses DNS-based routing or Anycast</li>
+      <li>Considers user location, DC health, latency</li>
+      <li>
+        <strong className="text-foreground">Example:</strong> Route US users to US-East, EU users to EU-West
+      </li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border-2 border-slate-400/60 bg-slate-500/10 p-6 dark:border-slate-700/50">
+    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Local load balancing</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Operates within a single data center</li>
+      <li>Acts as a reverse proxy</li>
+      <li>Uses Virtual IP (VIP) for clients</li>
+      <li>Focuses on server health and capacity</li>
+      <li>Handles actual request distribution</li>
+      <li>
+        <strong className="text-foreground">Example:</strong> Distribute across 50 servers in US-East DC
+      </li>
+    </ul>
+  </div>
+</div>
+
+<Callout variant="warning" title="DNS limitations">
+**Caching issues:** ISPs cache DNS responses, so TTL determines how quickly traffic shifts. **No health awareness:** DNS keeps returning dead server IPs until TTL expires. For production GSLB, use dedicated solutions like AWS Route 53, Cloudflare, or dedicated ADCs.
+</Callout>
+
+## Key features and services
+
+Modern load balancers provide much more than just traffic distribution:
+
+<MetricTable
+  title="Key features and services"
+  columns={['#', 'Feature', 'Detail']}
+  compact
+  rows={[
+    [
+      '1',
+      'Health checking',
+      'Active checks: LB sends periodic requests (e.g. GET /health every 10s). Passive checks: Monitor real traffic for errors. Unhealthy servers are removed automatically and re-added when healthy.',
+    ],
+    [
+      '2',
+      'SSL/TLS termination',
+      'LB handles encryption/decryption, sending plain HTTP to backend servers. Reduces server CPU load by 20–40%. Centralizes certificate management. Also called &quot;SSL offloading&quot;.',
+    ],
+    [
+      '3',
+      'Sticky sessions (session persistence)',
+      'Ensures a client&apos;s subsequent requests always route to the same server (via cookie or IP hash). Useful for stateful apps, but better practice: use external session store (Redis) for stateless design.',
+    ],
+    [
+      '4',
+      'Auto scaling integration',
+      'Cloud LBs integrate with auto-scaling groups. As traffic increases, new servers spin up and automatically register. When traffic drops, servers deregister and terminate.',
+    ],
+    [
+      '5',
+      'Service discovery',
+      'LB queries service registry to find healthy instances. Essential in dynamic container environments (Kubernetes, Docker Swarm) where IPs change frequently.',
+    ],
+    [
+      '6',
+      'Security features',
+      'Web Application Firewall (WAF) capabilities, DDoS protection at L3/L4/L7, rate limiting per client/IP, IP whitelisting/blacklisting. First line of defense.',
+    ],
+  ]}
+/>
+
+## Load balancing algorithms (overview)
+
+The algorithm determines **HOW** requests are distributed. Here&apos;s a quick overview — see the detailed algorithms page for a deep dive.
+
+<LoadBalancerAlgorithmTable />
+
+Deep dive: **[Load balancer algorithms](/learn/hld/lb-algorithms)**
+
+<Callout variant="tip" title="90% of cases">
+Round Robin or Least Connections is sufficient. Start simple, optimize when you have data showing problems. Don&apos;t over-engineer.
+</Callout>
+
+## Real-world examples
+
+### Amazon Web Services (AWS)
+
+- **ALB:** Layer 7, HTTP/HTTPS routing by URL, headers, cookies
+- **NLB:** Layer 4, ultra-high performance (millions req/sec)
+- **Classic LB:** Legacy, both L4 and L7 features
+- Auto-scaling integration, health checks every 5–300 seconds
+
+### Netflix — Zuul gateway
+
+- Custom Layer 7 load balancer + API gateway
+- Routes to 1000+ microservices
+- Handles 100K+ requests/second per instance
+- Supports canary deployments (1% traffic to new version)
+- Dynamic routing rules, authentication, rate limiting
+
+### Google Cloud Load Balancing
+
+- Global HTTP(S) LB: Single anycast IP worldwide
+- Automatic cross-region failover
+- Content-based routing by URL, headers, cookies
+- Integrated with Cloud CDN for edge caching
+
+### Nginx and HAProxy (self-hosted)
+
+- **Nginx:** Most popular web server + LB, 60%+ market share
+- **HAProxy:** High-performance TCP/HTTP LB, used by GitHub, Reddit
+- Both support: Round Robin, Least Connections, IP Hash, Health Checks
+- Can handle millions of concurrent connections
+
+## Knowledge check
+
+<LoadBalancerKnowledgeCheck />
+
+## Key takeaways
 
 <SummaryBox title="Key takeaways">
-- Load balancers distribute traffic across multiple servers for scalability and availability.
-- Choose a strategy (round robin, least connections, weighted, hash) based on your needs (stateless vs sticky sessions).
+- Load balancer = traffic cop distributing requests across servers to prevent overload and ensure high availability.
+- Key benefits: Scalability (add servers), Availability (handle failures), Performance (optimize distribution), Maintainability (zero-downtime updates).
+- Layer 4 = fast, routes by IP/port. Layer 7 = smart, routes by HTTP content. Most web apps use L7.
+- Place LBs between: Users↔Web servers, Web↔App servers, App↔Database servers.
+- GSLB = global routing across data centers. Local LB = distribution within a data center.
+- Health checks are critical — remove failed servers automatically.
+- Modern LBs provide: SSL termination, sticky sessions, auto-scaling, service discovery, security.
+- Start simple with Round Robin or Least Connections.
 </SummaryBox>

@@ -1,0 +1,137 @@
+# Cache Invalidation
+
+**Cache invalidation** is deciding **when** to **remove or refresh** cached copies so clients do not rely on **stale** data after the **source of truth** changes. It is famously **hard** because systems are **distributed**, **concurrent**, and **staleness** tolerances differ by feature.
+
+## The menu board analogy
+
+<MetricTable
+  title="Simple analogy"
+  columns={['Piece', 'Mental model']}
+  rows={[
+    [
+      'Menu board',
+      'The cache: fast to read, visible to everyone, not the authoritative recipe book.',
+    ],
+    [
+      'Kitchen / POS',
+      'The database (or service of record): prices and dishes actually change here first.',
+    ],
+    [
+      'Invalidation',
+      'When prices change, someone must update the board (or take it down until fresh). Forget to update and customers see wrong prices; rewrite constantly and you waste effort and can trigger flash crowds.',
+    ],
+  ]}
+/>
+
+**Cache invalidation** (in practice): **delete**, **overwrite**, or **version-bump** cached entries when underlying data changes — or let **TTL** bound how wrong things can get.
+
+## Invalidation strategies
+
+<MetricTable
+  title="How freshness is enforced"
+  columns={['Strategy', 'How it works', 'Upsides', 'Downsides']}
+  compact
+  rows={[
+    [
+      'Time-based (TTL)',
+      'Each entry expires after a fixed lifetime; refresh on next read or lazy delete.',
+      'Simple to ship; bounds staleness; works across many nodes without coordination.',
+      'Still stale until expiry; picking TTL is product- and load-dependent.',
+    ],
+    [
+      'Event-based',
+      'On write, app or pipeline deletes keys or publishes “bust” events.',
+      'Can be very fresh when wired correctly; precise invalidation possible.',
+      'Coupling: every writer path must know what keys exist; easy to miss one.',
+    ],
+    [
+      'Write-through',
+      'Every write updates cache and database together (same request path).',
+      'Strong read-your-writes consistency from that writer; cache matches DB after success.',
+      'Higher write latency; cache may hold data nobody reads.',
+    ],
+    [
+      'Write-behind',
+      'Ack write to cache; persist to DB asynchronously.',
+      'Fast writes; smooths spikes.',
+      'Loss window before flush; invalidation across readers still needs design.',
+    ],
+  ]}
+/>
+
+These overlap with patterns in **[Caching Strategies](/learn/hld/caching-strategies)** — invalidation is **how** you keep those patterns **honest** about freshness.
+
+## Common patterns
+
+<MetricTable
+  title="Patterns in production"
+  columns={['Pattern', 'Idea', 'Typical use']}
+  compact
+  rows={[
+    [
+      'Versioned keys',
+      'Key includes a version or generation: user:123:v7. Bump version on update; old keys become garbage.',
+      'Avoids some races; easy bulk bust by bumping one number; tune eviction for orphan keys.',
+    ],
+    [
+      'Tag-based',
+      'Associate many keys with a tag (e.g. product:123); invalidate all keys with that tag on change.',
+      'Good for fan-out (detail page, list fragments, API responses tied to one entity).',
+    ],
+    [
+      'Pub/Sub invalidation',
+      'Publish invalidation events; all app or cache nodes subscribe and clear local or remote entries.',
+      'Scales to many cache instances; eventual consistency unless combined with strong store reads.',
+    ],
+    [
+      'Cache-aside + short TTL',
+      'Lazy load on miss; TTL caps staleness when you miss an explicit delete.',
+      'Default combo for many services; tune TTL vs load and accept bounded staleness.',
+    ],
+  ]}
+/>
+
+## Challenges
+
+<MetricTable
+  title="What breaks at scale"
+  columns={['Challenge', 'What to do']}
+  compact
+  rows={[
+    [
+      'Distributed invalidation',
+      'Fifty app nodes or regional caches each hold copies — a local delete is not enough.',
+      'Pub/sub, centralized metadata (version in key), or accept **eventual** consistency with short TTL.',
+    ],
+    [
+      'Thundering herd',
+      'One popular key expires; thousands of requests miss together and hammer the DB.',
+      'Single-flight / request coalescing, staggered TTL jitter, soft TTL with background refresh, circuit limits.',
+    ],
+    [
+      'Race conditions',
+      'Reader loads stale value after a write but before invalidation completes, then repopulates cache.',
+      'Version checks, compare-and-swap on write, lease or lock around refill, or “invalidate after write” ordering.',
+    ],
+    [
+      'Partial updates',
+      'User name changes but cached profile blob still has old avatar URL.',
+      'Invalidate the **whole** aggregate key, or split into fine-grained keys you update independently.',
+    ],
+  ]}
+/>
+
+<Callout variant="warning" title="No silver bullet">
+Staleness, complexity, write cost, and **blast radius** trade off. Choose from **product SLOs** (“how stale can this be?”) and **measure** miss storms and error budgets — not from dogma.
+</Callout>
+
+## Key takeaways
+
+<SummaryBox title="Cache invalidation — recap">
+- **TTL** is the **simplest** guardrail but allows **staleness** until expiry — combine with **explicit** deletes on known writes when possible.
+- **Event-based** invalidation is **freshest** when complete, but **couples** every write path to **cache keys** (or tags / versions).
+- **Versioned keys** and **tags** reduce **races** and help **fan-out** invalidation across related entries.
+- **Thundering herd** after expiry needs **coordination** (single-flight, jitter) — watch hot keys in metrics.
+- There is **no perfect** policy; pick from **staleness tolerance**, **write volume**, and **operational** ability to keep invalidation **complete**.
+- Related: **[Caching Strategies](/learn/hld/caching-strategies)**, **[Cache Eviction](/learn/hld/cache-eviction)** (capacity vs freshness are different levers).
+</SummaryBox>

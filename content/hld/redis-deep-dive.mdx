@@ -1,0 +1,140 @@
+# Redis Deep Dive
+
+**Redis** (Remote Dictionary Server) is an **in-memory data structure store** people use as a **cache**, **session store**, **message bus**, **queue**, and sometimes as a **primary** datastore for specific workloads. It is optimized for **low latency** and **rich types** — not only string GET/SET.
+
+## What is Redis?
+
+<MetricTable
+  title="Orders of magnitude (typical — tune and measure yours)"
+  columns={['Dimension', 'Ballpark']}
+  compact
+  rows={[
+    ['Latency', 'Often sub-millisecond for simple ops on a healthy LAN; network and serialization dominate.'],
+    ['Throughput', 'Tens to hundreds of thousands of ops/sec per instance depending on command mix and hardware.'],
+    ['Data size', 'Bounded by RAM (and eviction policy when memory is capped); disk is for persistence, not primary access path.'],
+  ]}
+/>
+
+The **command execution** path is **single-threaded** (per shard in Cluster), which avoids lock contention for data structures and keeps semantics predictable. Newer versions can offload **I/O** to threads, but **core command processing** stays single-threaded per logical database shard — so **slow commands** still matter.
+
+<Callout variant="tip" title="Not “just Memcached”">
+Memcached is largely opaque blobs; Redis gives you **lists, sets, sorted sets, hashes, streams**, **TTL**, **Lua**, **modules**, and **persistence** options — different design center, overlapping cache use cases.
+</Callout>
+
+## Data structures
+
+<MetricTable
+  title="Core types (with example commands)"
+  columns={['Type', 'Use for', 'Example']}
+  compact
+  rows={[
+    ['Strings', 'Simple values, counters, serialized JSON, small binary blobs.', 'SET user:1 "john" / GET user:1 / INCR views:post:42'],
+    ['Lists', 'Queues, timelines, capped feeds (with LTRIM).', 'LPUSH queue:emails "msg1" / RPOP queue:emails'],
+    ['Sets', 'Unique members: tags, online users, dedupe sets.', "SADD tags:post:1 redis cache / SMEMBERS tags:post:1"],
+    ['Sorted sets', 'Rankings, leaderboards, time-series-ish scores.', "ZADD leaderboard 100 alice / ZREVRANGE leaderboard 0 9 WITHSCORES"],
+    ['Hashes', 'Objects as field-value maps (user profile fields).', "HSET user:1 name john age 30 / HGETALL user:1"],
+    ['Streams', 'Append-only logs: messaging, event capture, consumer groups.', "XADD events * type click / XREAD COUNT 10 STREAMS events 0"],
+  ]}
+/>
+
+```redis
+SET user:1 "john"
+LPUSH queue:emails "msg1"
+SADD tags:post:1 redis cache
+ZADD leaderboard 100 "alice"
+HSET user:1 name "john" age 30
+XADD events * type "click"
+```
+
+Also common in practice: **Bitmaps**, **HyperLogLog** (cardinality), **Geospatial** indexes — same server, different encodings under the hood.
+
+## Common use cases
+
+<MetricTable
+  title="Where Redis shines"
+  columns={['Use case', 'Typical pattern']}
+  compact
+  rows={[
+    ['Caching', 'Cache-aside or read-through; TTL + explicit invalidation for hot keys and computed payloads.'],
+    ['Session store', 'Server-side sessions with EXPIRE; sticky sessions less critical if all app nodes reach same Redis.'],
+    ['Rate limiting', 'INCR + EXPIRE, sliding windows with sorted sets, or fixed windows with hashes.'],
+    ['Leaderboards', 'Sorted sets with ZINCRBY / range queries; shard or aggregate at very large scale.'],
+    ['Pub/Sub', 'Fire-and-forget fan-out; not a durable queue — see Streams or external brokers for guaranteed delivery.'],
+    ['Distributed locks', 'SET key NX PX + careful TTL + token (Redlock is debated — understand trade-offs).'],
+    ['Queues', 'Lists for simple FIFO; for durability and consumer groups prefer Streams or a real queue.'],
+    ['Real-time analytics', 'HyperLogLog for UV estimates; counters; time-bucketed keys with TTL.'],
+  ]}
+/>
+
+Compare messaging shapes with **[Message Queues](/learn/hld/message-queues)** and **[Pub/Sub Pattern](/learn/hld/pub-sub-pattern)** when you design around Redis.
+
+## Persistence options
+
+<MetricTable
+  title="RDB, AOF, and combining them"
+  columns={['Mode', 'Behavior', 'Upsides', 'Downsides']}
+  compact
+  rows={[
+    [
+      'RDB (snapshot)',
+      'Point-in-time dump on schedule or manual BGSAVE; compact binary snapshot.',
+      'Fast restarts; good for backups and replication bootstrap; less write amplification than always-append.',
+      'Crash between snapshots can lose recent writes; fork cost on large memory.',
+    ],
+    [
+      'AOF (append-only file)',
+      'Log every mutating command (sync policy configurable: always, everysec, no).',
+      'Finer durability story; replay log on startup.',
+      'Larger disk use; rewrite (AOF rewrite) needed; slower recovery than RDB alone for huge logs.',
+    ],
+    [
+      'RDB + AOF',
+      'Use both: periodic snapshots plus continuous AOF.',
+      'Balance of restart time and durability window; common in production when data must survive restarts.',
+      'More disk and operational tuning (rewrite schedules, fsync policy).',
+    ],
+  ]}
+/>
+
+For **pure cache** with **rebuild-from-DB** acceptable, some teams run **no persistence** or **RDB-only** with loose schedules.
+
+## Clustering and high availability
+
+<MetricTable
+  title="Scaling and survival"
+  columns={['Approach', 'Role']}
+  compact
+  rows={[
+    [
+      'Replication',
+      'Primary handles writes; replicas async replicate; manual or Sentinel-assisted promotion on failure.',
+    ],
+    [
+      'Redis Sentinel',
+      'Health checks, automatic failover, and service discovery for clients that speak Sentinel protocol.',
+    ],
+    [
+      'Redis Cluster',
+      'Automatic sharding (hash slots); horizontal scale-out; clients route to correct node.',
+    ],
+    [
+      'Managed (ElastiCache, Redis Cloud, Azure Cache, etc.)',
+      'Backups, patching, failover, sometimes multi-AZ — trade control for operations.',
+    ],
+  ]}
+/>
+
+<Callout variant="warning" title="Memory is the bottleneck">
+Every replica holds a full copy of its shard data in typical setups — **RAM × replicas** adds up. **Cluster** splits keys across nodes; **hot keys** can still skew one shard.
+</Callout>
+
+## Key takeaways
+
+<SummaryBox title="Redis — recap">
+- Redis is an **in-memory data structure server** — **cache**, **session** store, **rate limiter**, **rankings**, **pub/sub**, **locks**, and more.
+- Know **strings, lists, sets, sorted sets, hashes, streams** — pick the type that matches your **access pattern**.
+- **Persistence**: **RDB** for snapshots, **AOF** for finer durability, often **both** when restart loss is costly.
+- **HA / scale**: **replication**, **Sentinel**, **Cluster**, or **managed** Redis — match **RTO/RPO** and **hot-key** reality.
+- **Single-threaded** command core per shard: avoid **O(n)** ops on huge keys in production.
+- Pair with **[Caching Strategies](/learn/hld/caching-strategies)** and **[Cache Invalidation](/learn/hld/cache-invalidation)** when Redis is your cache layer.
+</SummaryBox>

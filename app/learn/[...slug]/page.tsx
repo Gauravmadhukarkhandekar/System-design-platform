@@ -27,6 +27,7 @@ import { ReadWriteExamplesTable } from '@/components/ReadWriteExamplesTable';
 import { CachingStrategiesVisual } from '@/components/CachingStrategiesVisual';
 import { CacheEvictionSimulator } from '@/components/CacheEvictionSimulator';
 import { IsolationComparisonTable, IsolationLevelCards } from '@/components/IsolationLevelsVisual';
+import { DatabaseQuickReferenceTable, PolyglotPersistenceStack } from '@/components/DatabaseChoiceVisual';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -80,6 +81,8 @@ const mdxComponents = {
   CacheEvictionSimulator,
   IsolationComparisonTable,
   IsolationLevelCards,
+  DatabaseQuickReferenceTable,
+  PolyglotPersistenceStack,
   table: MdxTable,
 };
 

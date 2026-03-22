@@ -7,7 +7,7 @@ Decision framework for selecting databases based on your requirements.
 <Callout variant="tip" title="Simple analogy">
 You wouldn&apos;t use a hammer to cut wood or a saw to drive nails. Different tools for different jobs.
 
-Databases are the same: PostgreSQL for complex queries, Redis for caching,MongoDB for flexible documents, Cassandra for massive writes.
+Databases are the same: PostgreSQL for complex queries, Redis for caching, MongoDB for flexible documents, Cassandra for massive writes.
 
 There&apos;s no &quot;best&quot; database-only the best for your specific use case.
 </Callout>
@@ -52,6 +52,25 @@ There&apos;s no &quot;best&quot; database-only the best for your specific use ca
   ]}
 />
 
+```mermaid
+mindmap
+  root((Choose a database))
+    SQL and ACID
+      PostgreSQL
+      MySQL
+    Flexible documents
+      MongoDB
+    Massive writes
+      Cassandra
+      DynamoDB
+    In memory
+      Redis
+    Graphs
+      Neo4j
+    Search
+      Elasticsearch
+```
+
 ## Database by use case
 
 <MetricTable
@@ -72,39 +91,13 @@ There&apos;s no &quot;best&quot; database-only the best for your specific use ca
 
 ## Quick reference table
 
-<MetricTable
-  title="Quick reference table"
-  columns={['Database', 'Type', 'Best for', 'Avoid when']}
-  compact
-  rows={[
-    ['PostgreSQL', 'SQL', 'Complex queries, JSON, GIS', 'Need massive horizontal scale'],
-    ['MySQL', 'SQL', 'Read-heavy, web apps', 'Complex JSON operations'],
-    ['MongoDB', 'Document', 'Flexible schema, rapid dev', 'Complex transactions'],
-    ['Redis', 'Key-Value', 'Caching, sessions, queues', 'Complex queries, large data'],
-    ['Cassandra', 'Wide-Column', 'Massive writes, time-series', 'Ad-hoc queries, JOINs'],
-    ['DynamoDB', 'Key-Value', 'Serverless, auto-scale', 'Complex queries, cost-sensitive'],
-    ['Neo4j', 'Graph', 'Relationships, recommendations', 'Simple CRUD operations'],
-    ['Elasticsearch', 'Search', 'Full-text search, logs', 'Primary data store'],
-  ]}
-/>
+<DatabaseQuickReferenceTable />
 
 ## Polyglot persistence
 
 Polyglot persistence means using multiple databases in one system, each optimized for specific data types and access patterns.
 
-### Example: e-commerce platform
-
-<MetricTable
-  title="Example: e-commerce platform"
-  columns={['Store', 'Role']}
-  compact
-  rows={[
-    ['PostgreSQL', 'Orders, users, products (ACID)'],
-    ['Redis', 'Sessions, cart, cache'],
-    ['Elasticsearch', 'Product search'],
-    ['S3', 'Product images'],
-  ]}
-/>
+<PolyglotPersistenceStack />
 
 ### Complexity trade-off
 
@@ -113,8 +106,8 @@ More databases = more operational complexity. Start simple (one SQL database), t
 ## Key takeaways
 
 <SummaryBox title="Key takeaways">
-- No &quot;best&quot; database-choose based on access patterns and requirements.
-- Start with PostgreSQL for most applications-it handles 90% of cases.
+- No &quot;best&quot; database — choose based on access patterns and requirements.
+- Start with PostgreSQL for most applications — it handles 90% of cases.
 - Add Redis when you need caching or fast ephemeral storage.
 - Use specialized databases (Elasticsearch, Neo4j) for specific needs.
 - Polyglot persistence: multiple databases for different data types.

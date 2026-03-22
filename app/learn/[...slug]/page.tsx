@@ -23,6 +23,7 @@ import { SlaUptimeCalculator } from '@/components/SlaUptimeCalculator';
 import { AcidPropertiesCards } from '@/components/AcidPropertiesCards';
 import { BasePropertiesCards } from '@/components/BasePropertiesCards';
 import { MetricTable } from '@/components/MetricTable';
+import { ReadWriteExamplesTable } from '@/components/ReadWriteExamplesTable';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -71,6 +72,7 @@ const mdxComponents = {
   AcidPropertiesCards,
   BasePropertiesCards,
   MetricTable,
+  ReadWriteExamplesTable,
   table: MdxTable,
 };
 

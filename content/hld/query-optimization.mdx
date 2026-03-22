@@ -1,0 +1,178 @@
+# Query Optimization
+
+**Query optimization** is how you make **database work** cheaper: fewer rows touched, **indexes** used, less data over the wire, and **plans** that match your **filters** and **JOIN** patterns. Most gains come from **measuring** (EXPLAIN, timings) and then **changing** schema, indexes, or SQL — not from vague tuning knobs.
+
+## The GPS analogy
+
+<MetricTable
+  title="Simple analogy"
+  subtitle="The optimizer picks a plan; your schema and SQL constrain what plans are possible."
+  columns={['Role', 'Mental model']}
+  rows={[
+    [
+      'You',
+      'You declare the destination: the SQL query and the tables or views involved.',
+    ],
+    [
+      'The optimizer',
+      'Like GPS routing: it explores paths (sequential scan, index scan, hash join, …), estimates cost from statistics (table sizes, selectivity), and picks a plan.',
+    ],
+    [
+      'Traffic and roads',
+      'Row counts, buffer cache, disk I/O, and whether useful indexes exist — same query text can be fast or catastrophic as data grows.',
+    ],
+  ]}
+/>
+
+## EXPLAIN your queries
+
+**EXPLAIN** (and **EXPLAIN ANALYZE** where supported) shows the **planned** or **actual** execution steps. Use it on **every slow or suspicious** query before guessing.
+
+<MetricTable
+  title="What to look for (first pass)"
+  columns={['Signal', 'Typical meaning']}
+  compact
+  rows={[
+    [
+      'Sequential scan (seq scan) on a large table',
+      'Engine may read the whole heap for a selective filter — often a smell if the table is big and the predicate is selective.',
+    ],
+    [
+      'Index scan / index-only scan',
+      'Usually good when it matches your WHERE or ORDER BY; still check rows estimated vs actual (Analyze helps).',
+    ],
+    [
+      'High row estimates or nested loops on huge inner sides',
+      'Statistics may be stale, or filters prevent pruning — revisit indexes and predicates.',
+    ],
+    [
+      'Sort / hash aggregate dominating cost',
+      'Large sorts or aggregates — consider indexes that match ORDER BY, narrower SELECT, or pre-aggregation.',
+    ],
+  ]}
+/>
+
+```sql
+-- Postgres-style: planned nodes + actual timings
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT id, email FROM users WHERE email = 'alice@example.com';
+```
+
+<Callout variant="tip" title="Dialect differences">
+Syntax varies: **Postgres** uses `EXPLAIN ANALYZE`; **MySQL** uses `EXPLAIN` / `EXPLAIN ANALYZE` in newer versions; **SQL Server** has `SET STATISTICS` and graphical plans. The **ideas** (scan vs seek, cost, rows) transfer across engines.
+</Callout>
+
+## Key optimization techniques
+
+### Add proper indexes
+
+Index columns that appear in **WHERE**, **JOIN** keys, and **ORDER BY**. Use **composite** indexes when filters combine columns (left-prefix rules still apply).
+
+```sql
+-- Bad: selective filter with no supporting index (planner may seq scan)
+SELECT * FROM orders WHERE status = 'active';
+
+-- Good: index aligned with the predicate
+CREATE INDEX idx_orders_status ON orders (status);
+```
+
+### Avoid SELECT *
+
+Fetch only columns the application needs — less I/O, memory, and network.
+
+```sql
+-- Avoid
+SELECT * FROM users WHERE id = 1;
+
+-- Prefer
+SELECT id, name, email FROM users WHERE id = 1;
+```
+
+### Use LIMIT (and real pagination)
+
+Do not pull millions of rows when the UI needs a page.
+
+```sql
+-- Bad habit for huge tables
+SELECT * FROM logs ORDER BY created_at DESC;
+
+-- Page explicitly (OFFSET has limits at scale; keyset pagination is often better)
+SELECT * FROM logs ORDER BY created_at DESC LIMIT 20 OFFSET 0;
+```
+
+### Avoid functions on indexed columns
+
+Wrapping a column in a function often **blocks** a plain index on that column. Move the expression to the **value** side or use a **functional** index if the pattern is fixed.
+
+```sql
+-- Often cannot use a normal index on created_at
+SELECT * FROM events WHERE YEAR(created_at) = 2024;
+
+-- Range on the column uses a btree index
+SELECT * FROM events
+WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';
+```
+
+## JOIN optimization
+
+<MetricTable
+  title="JOIN-focused habits"
+  columns={['Technique', 'Why']}
+  compact
+  rows={[
+    [
+      'Index foreign keys and join keys',
+      'Nested-loop and merge joins need efficient lookup on the inner side; missing indexes multiply cost.',
+    ],
+    [
+      'Filter early',
+      'Apply selective WHERE before or inside joins so fewer rows participate in the join.',
+    ],
+    [
+      'Same hot JOIN every time',
+      'Consider denormalized or read-model shapes to remove repeated joins on critical paths (trade-offs in the Denormalization lesson).',
+    ],
+    [
+      'Pick the right join shape',
+      'INNER vs LEFT vs EXISTS change semantics and plans — use the minimal join that preserves correctness.',
+    ],
+  ]}
+/>
+
+More on duplicating for reads: **[Denormalization](/learn/hld/denormalization)**.
+
+## Common anti-patterns
+
+<MetricTable
+  title="Smells to fix"
+  columns={['Anti-pattern', 'Better direction']}
+  compact
+  rows={[
+    [
+      'N+1 queries',
+      'Load a list, then one query per row. Prefer JOINs, IN batches, or DataLoader-style batching.',
+    ],
+    [
+      'OR across unrelated indexed columns',
+      'WHERE a = 1 OR b = 2 often defeats a single index. Consider UNION of two selective queries or a composite strategy.',
+    ],
+    [
+      "LIKE '%value%' (leading wildcard)",
+      'Usually cannot use a normal B-tree index on the column. Use full-text indexes, trigram, or search engines for substring search.',
+    ],
+    [
+      'No pagination',
+      'Returning full result sets for large tables — add LIMIT / keyset pagination and cap exports.',
+    ],
+  ]}
+/>
+
+## Key takeaways
+
+<SummaryBox title="Query optimization — recap">
+- **EXPLAIN** (and **ANALYZE** where available) **before** you optimize — prove where time and rows go.
+- **Index** columns used in **WHERE**, **JOIN**, and **ORDER BY**; understand **composite** and **prefix** rules.
+- Prefer **narrow SELECT lists**, **LIMIT** / **pagination**, and **keyset** patterns for large tables at scale.
+- Do not wrap **indexed columns** in arbitrary **functions** unless you add matching **functional** indexes.
+- Kill **N+1** access with **joins** or **batched** loads; watch **OR** and **leading-wildcard LIKE** for plan regressions.
+</SummaryBox>

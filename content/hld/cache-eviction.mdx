@@ -1,0 +1,192 @@
+# Cache Eviction Policies
+
+When the cache is **full**, something has to go. The **eviction policy** decides **which** key leaves — and that choice **directly drives hit rate**, tail latency, and how much useful data stays hot.
+
+## The closet analogy
+
+<Callout variant="tip" title="Simple analogy">
+Your **closet** holds **20** items. You buy a **new jacket** but it is **full**. What do you **donate**?
+</Callout>
+
+<MetricTable
+  title="Policy → what you remove"
+  columns={['Policy', 'Closet mental model']}
+  rows={[
+    ['LRU (least recently used)', 'Donate what you have not worn for the longest time — recency matters.'],
+    ['LFU (least frequently used)', 'Donate what you wear the fewest times — popularity matters.'],
+    ['FIFO (first in, first out)', 'Donate the oldest purchase by arrival order — ignores how often you wear it.'],
+    ['Random', 'Close your eyes and pull one item — simple, unpredictable.'],
+  ]}
+/>
+
+## Eviction simulator
+
+Try the same key sequence under **LRU**, **FIFO**, **LFU**, and **Random** (capacity **4**). Notice **who gets evicted** and when.
+
+<CacheEvictionSimulator />
+
+## Common eviction policies
+
+<MetricTable
+  title="LRU — least recently used"
+  columns={['Aspect', 'Detail']}
+  compact
+  rows={[
+    ['Idea', 'Evict the key whose last access was longest ago.'],
+    ['How', 'Track last access time or maintain recency order (list + map).'],
+    ['Pros', 'Strong for typical “working set” and recency; widely understood.'],
+    ['Cons', 'One-off scans can pollute; metadata per entry.'],
+    ['Complexity', 'O(1) get/put with hash map + doubly linked list (classic interview structure).'],
+  ]}
+/>
+
+<MetricTable
+  title="LFU — least frequently used"
+  columns={['Aspect', 'Detail']}
+  compact
+  rows={[
+    ['Idea', 'Evict the key with the smallest access count.'],
+    ['How', 'Increment on hit; evict min count (ties: oldest among tied keys is common).'],
+    ['Pros', 'Keeps truly hot keys; good when frequency is stable.'],
+    ['Cons', '“Forever popular” keys can block newcomers; more complex than LRU.'],
+    ['Complexity', 'Often O(log n) per op; specialized structures can approach O(1).'],
+  ]}
+/>
+
+<MetricTable
+  title="FIFO — first in, first out"
+  columns={['Aspect', 'Detail']}
+  compact
+  rows={[
+    ['Idea', 'Evict the key that entered the cache earliest.'],
+    ['How', 'Queue: evict front, insert at back.'],
+    ['Pros', 'Very simple; predictable; low bookkeeping.'],
+    ['Cons', 'Ignores usage — can evict a star key.'],
+    ['Complexity', 'O(1) with queue + map for membership.'],
+  ]}
+/>
+
+<MetricTable
+  title="Random"
+  columns={['Aspect', 'Detail']}
+  compact
+  rows={[
+    ['Idea', 'Evict a uniformly random resident key.'],
+    ['How', 'Pick random index or key from the set.'],
+    ['Pros', 'Minimal metadata; easy to implement.'],
+    ['Cons', 'Unpredictable quality; can spike miss rate.'],
+    ['Complexity', 'O(1) selection if you can sample a key in O(1).'],
+  ]}
+/>
+
+<MetricTable
+  title="TTL — time-to-live"
+  columns={['Aspect', 'Detail']}
+  compact
+  rows={[
+    ['Idea', 'Entries expire after a wall-clock or logical TTL regardless of LRU/LFU position.'],
+    ['How', 'Store expiry timestamp; lazy delete on read or periodic sweep.'],
+    ['Pros', 'Bounds staleness; natural for sessions and time-sensitive data.'],
+    ['Cons', 'Popular keys can still disappear when TTL fires; needs tuning.'],
+    ['Complexity', 'O(1) check per access; global expiry may need heaps or sampling.'],
+  ]}
+/>
+
+<Callout variant="info" title="Often combined">
+Production caches often use **maxmemory** + **LRU/LFU/FIFO** **and** **TTL** on keys (e.g. Redis `volatile-*` vs `allkeys-*`). Freshness and capacity are **two** different knobs.
+</Callout>
+
+## LRU implementation (interview classic)
+
+**Data structures:** **hash map** (key → list node) + **doubly linked list** ordered by recency (**head** = most recent, **tail** = least recent, or the reverse — stay consistent in the interview).
+
+```python
+class Node:
+    def __init__(self, key=0, val=0):
+        self.key, self.val = key, val
+        self.prev = self.next = None
+
+class LRUCache:
+    def __init__(self, capacity: int):
+        self.cap = capacity
+        self.map = {}  # key -> Node
+        self.head = Node()
+        self.tail = Node()
+        self.head.next = self.tail
+        self.tail.prev = self.head
+
+    def _add_first(self, node):
+        n = self.head.next
+        self.head.next = node
+        node.prev = self.head
+        node.next = n
+        n.prev = node
+
+    def _remove(self, node):
+        p, n = node.prev, node.next
+        p.next = n
+        n.prev = p
+
+    def get(self, key):
+        if key not in self.map:
+            return -1
+        node = self.map[key]
+        self._remove(node)
+        self._add_first(node)
+        return node.val
+
+    def put(self, key, value):
+        if key in self.map:
+            node = self.map[key]
+            node.val = value
+            self._remove(node)
+            self._add_first(node)
+            return
+        if len(self.map) >= self.cap:
+            lru = self.tail.prev
+            self._remove(lru)
+            del self.map[lru.key]
+        node = Node(key, value)
+        self.map[key] = node
+        self._add_first(node)
+```
+
+## Policy comparison
+
+<MetricTable
+  title="Which policy when (rules of thumb)"
+  columns={['Policy', 'Best for', 'Avoid when']}
+  compact
+  rows={[
+    ['LRU', 'General web and API caching; shifting “working set”.', 'Huge one-time scans that flood the cache (consider scan resistance or TTL).'],
+    ['LFU', 'Stable hot-key distributions (some CDN / object caches).', 'Access mix changes abruptly — old “stars” block new hot data.'],
+    ['FIFO', 'Streaming buffers, very simple embedded caches.', 'Items have very different business value or hit rates.'],
+    ['TTL', 'Sessions, tokens, feature flags, “good enough” freshness.', 'You only care about frequency, not age of validity.'],
+  ]}
+/>
+
+## Interview tips
+
+<MetricTable
+  title="“Design an LRU cache”"
+  columns={['Talking point', 'What to say']}
+  compact
+  rows={[
+    ['Structures', 'Hash map for O(1) lookup; doubly linked list for O(1) splice to mark MRU.'],
+    ['Why both', 'Map alone cannot order; list alone cannot find by key in O(1).'],
+    ['Edge cases', 'Capacity 0; update existing key without changing size; duplicate puts.'],
+    ['Concurrency', 'Mention locks, striping, or concurrent structures if they ask multithreading.'],
+    ['Real world', 'Mention Redis `volatile-lru`, `allkeys-lfu`, sampled LRU approximations at scale.'],
+  ]}
+/>
+
+## Key takeaways
+
+<SummaryBox title="Cache eviction — recap">
+- **Eviction** is mandatory when the cache is **bounded** — policy choice **strongly** affects **hit rate**.
+- **LRU** is the **default mental model** for many systems: evict **least recently used**; implement with **map + doubly linked list** for **O(1)** get/put.
+- **LFU** favors **frequency**; watch **inertia** of old hot keys when traffic **shifts**.
+- **FIFO** is **simplest** but **blind** to usage; **Random** is easy but **noisy**.
+- **TTL** addresses **freshness**; combine with **capacity** policies in real engines (**Redis**, CDNs, in-process caches).
+- In interviews: **draw** the list + map, state **invariants** (MRU/LRU ends), and connect to **production** approximations.
+</SummaryBox>

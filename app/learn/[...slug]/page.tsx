@@ -25,6 +25,7 @@ import { BasePropertiesCards } from '@/components/BasePropertiesCards';
 import { MetricTable } from '@/components/MetricTable';
 import { ReadWriteExamplesTable } from '@/components/ReadWriteExamplesTable';
 import { CachingStrategiesVisual } from '@/components/CachingStrategiesVisual';
+import { CacheEvictionSimulator } from '@/components/CacheEvictionSimulator';
 import { MdxTable } from '@/components/MdxTable';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
@@ -75,6 +76,7 @@ const mdxComponents = {
   MetricTable,
   ReadWriteExamplesTable,
   CachingStrategiesVisual,
+  CacheEvictionSimulator,
   table: MdxTable,
 };
 

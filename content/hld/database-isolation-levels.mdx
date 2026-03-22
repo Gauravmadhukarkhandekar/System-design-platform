@@ -1,0 +1,100 @@
+# Database Isolation Levels
+
+Control how transactions interact with each other. Trade consistency for performance.
+
+## The bank account analogy
+
+<Callout variant="tip" title="Simple analogy">
+You and your spouse both check your joint bank balance ($1000) at the same time, then both try to withdraw $800.
+
+**Poor isolation:** Both see $1000 → Both withdraw → Account goes -$600!
+
+**Good isolation:** First withdrawal locks account → Second sees $200 → Correctly denied
+</Callout>
+
+Isolation levels control how much transactions can "see" each other's uncommitted work.
+
+## The four isolation levels
+
+<IsolationLevelCards />
+
+## Read anomalies explained
+
+<MetricTable
+  title="Read anomalies explained"
+  columns={['Anomaly', 'What happens', 'Prevented by']}
+  compact
+  rows={[
+    [
+      'Dirty read',
+      'Reading uncommitted data that might be rolled back. T1 updates row → T2 reads updated value → T1 rolls back → T2 has invalid data',
+      'Read Committed+',
+    ],
+    [
+      'Non-repeatable read',
+      'Same row returns different values when read twice. T1 reads row → T2 updates & commits → T1 reads again → Different value!',
+      'Repeatable Read+',
+    ],
+    [
+      'Phantom read',
+      'New rows appear in range queries between reads. T1 counts rows WHERE x=1 → T2 inserts new row → T1 counts again → Different count!',
+      'Serializable',
+    ],
+  ]}
+/>
+
+## Comparison table
+
+<IsolationComparisonTable />
+
+## Database defaults
+
+<MetricTable
+  title="Database defaults"
+  columns={['Database', 'Default', 'Notes']}
+  compact
+  rows={[
+    ['PostgreSQL', 'Read Committed', 'Can use Serializable efficiently'],
+    ['MySQL (InnoDB)', 'Repeatable Read', 'Uses MVCC, avoids most locks'],
+    ['SQL Server', 'Read Committed', 'Snapshot isolation available'],
+    ['Oracle', 'Read Committed', 'Serializable supported'],
+  ]}
+/>
+
+## When to change isolation
+
+<div className="not-prose my-10 grid gap-4 lg:grid-cols-2">
+  <div className="rounded-2xl border-2 border-rose-400/60 bg-gradient-to-br from-rose-500/12 via-rose-500/5 to-background p-6 dark:border-rose-800/50">
+    <h3 className="text-lg font-bold text-rose-900 dark:text-rose-100">Use higher isolation (Serializable)</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Financial transactions (transfers, payments)</li>
+      <li>Inventory management (stock levels)</li>
+      <li>Booking systems (double-booking prevention)</li>
+      <li>Anywhere race conditions are critical</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border-2 border-emerald-400/60 bg-gradient-to-br from-emerald-500/12 via-emerald-500/5 to-background p-6 dark:border-emerald-800/50">
+    <h3 className="text-lg font-bold text-emerald-900 dark:text-emerald-100">Use lower isolation (Read Committed)</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>Read-heavy workloads</li>
+      <li>Analytics queries</li>
+      <li>Where slight inconsistency is acceptable</li>
+      <li>High-throughput applications</li>
+    </ul>
+  </div>
+</div>
+
+<Callout variant="note" title="Interview insight">
+Understand the trade-off: Higher isolation = more consistent but slower. Be ready to explain when you'd use each level and why.
+</Callout>
+
+## Key takeaways
+
+<SummaryBox title="Key takeaways">
+- Isolation levels control how much transactions can see each other's uncommitted work.
+- Read Committed is the most common default — prevents dirty reads.
+- Serializable prevents all anomalies but is slowest.
+- Higher isolation = more consistency but worse performance.
+- Know the anomalies: dirty read, non-repeatable read, phantom read.
+- In critical systems (banking), use higher isolation for sensitive operations.
+</SummaryBox>

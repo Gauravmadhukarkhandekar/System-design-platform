@@ -1,0 +1,103 @@
+# Redis vs Memcached
+
+**Redis** and **Memcached** are both **in-memory** systems used heavily for **caching**. The choice is less about “which is faster in the abstract” and more about **features**, **operations**, and **access patterns**. Memcached optimizes for **simple opaque blobs**; Redis adds **data structures**, **persistence**, and **broader ecosystem**.
+
+## Quick comparison
+
+<MetricTable
+  title="Simple analogy"
+  columns={['System', 'Mental model']}
+  rows={[
+    [
+      'Memcached',
+      'A very fast distributed hash table: opaque keys and byte blobs. Does one job — cache strings — with minimal surface area.',
+    ],
+    [
+      'Redis',
+      'A Swiss Army knife: key-value plus lists, sets, sorted sets, streams, pub/sub, optional persistence, replication, and more.',
+    ],
+  ]}
+/>
+
+## Feature comparison
+
+<MetricTable
+  title="Side-by-side (typical deployments)"
+  columns={['Feature', 'Redis', 'Memcached']}
+  compact
+  rows={[
+    ['Data types', 'Strings, lists, sets, sorted sets, hashes, streams, plus modules', 'Opaque values (effectively blobs / strings); no native collections in the protocol'],
+    ['Persistence', 'RDB snapshots, AOF, or both', 'None by design — pure cache; restart loses RAM'],
+    ['Replication / HA', 'Built-in replication; Sentinel; Redis Cluster', 'No server-side replication — clients or external tooling only'],
+    ['Pub/Sub', 'Yes (not durable — see Streams or brokers for guarantees)', 'No'],
+    ['Sharding / scale-out', 'Redis Cluster (server-side slots) or proxies', 'Mostly client-side sharding or consistent hashing across instances'],
+    ['Threading model', 'Single command thread per process (I/O threads can assist networking in newer versions)', 'Multi-threaded server — can use multiple cores for simple GET/SET'],
+    ['Memory for plain KV', 'Good; richer types add metadata overhead', 'Often leaner per key for large numbers of small string values'],
+  ]}
+/>
+
+More Redis detail: **[Redis Deep Dive](/learn/hld/redis-deep-dive)**.
+
+## When to use each
+
+<div className="not-prose my-8 grid gap-4 lg:grid-cols-2">
+  <div className="rounded-2xl border-2 border-red-400/40 bg-gradient-to-br from-red-500/10 via-rose-500/5 to-background p-6 dark:border-red-900/50">
+    <h3 className="text-lg font-bold text-red-900 dark:text-red-200">Choose Redis when…</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>You need <strong className="text-foreground">structures</strong> (lists, sets, sorted sets, hashes, streams)</li>
+      <li>You want <strong className="text-foreground">persistence</strong> or warm restarts matter</li>
+      <li>You use <strong className="text-foreground">pub/sub</strong>, rate limits, leaderboards, sessions with TTL</li>
+      <li>You need <strong className="text-foreground">replication</strong> / Sentinel / Cluster paths</li>
+      <li>Your team already standardizes on Redis across products</li>
+    </ul>
+  </div>
+  <div className="rounded-2xl border-2 border-slate-400/50 bg-gradient-to-br from-slate-500/10 via-zinc-500/5 to-background p-6 dark:border-slate-600/50">
+    <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Choose Memcached when…</h3>
+    <ul className="mt-4 list-inside list-disc space-y-2 text-sm text-muted-foreground">
+      <li>You only need <strong className="text-foreground">opaque key → blob</strong> caching</li>
+      <li>You want <strong className="text-foreground">multi-threaded</strong> throughput on many cores for simple ops</li>
+      <li><strong className="text-foreground">Memory efficiency</strong> for huge numbers of small values is the top priority</li>
+      <li>You are <strong className="text-foreground">already operating</strong> Memcached at scale with playbooks</li>
+      <li><strong className="text-foreground">No persistence</strong> is acceptable — cache is strictly disposable</li>
+    </ul>
+  </div>
+</div>
+
+## Performance considerations
+
+<MetricTable
+  title="What actually moves the needle"
+  columns={['Topic', 'Memcached', 'Redis']}
+  compact
+  rows={[
+    [
+      'Throughput on multicore',
+      'Server can spread work across threads — attractive for millions of simple GET/SETs.',
+      'Single main command thread per instance; scale horizontally or use I/O thread offload; still often hundreds of k ops/s.',
+    ],
+    [
+      'Latency',
+      'Excellent for tiny values and simple protocol.',
+      'Excellent for simple ops; complexity grows with command choice (avoid huge keys and blocking ops).',
+    ],
+    [
+      'Memory overhead',
+      'Lean for plain string caching at huge key counts.',
+      'More flexible encodings and structures — slightly higher overhead per key on average for plain strings.',
+    ],
+  ]}
+/>
+
+<Callout variant="tip" title="Interview framing">
+“Memcached vs Redis” is usually **features vs simplicity**. For **only** caching serialized pages or DB rows as blobs, Memcached remains credible. For **sessions, rate limits, rankings, queues-lite**, Redis wins on **expressiveness** — not always raw single-thread vs multi-thread in isolation.
+</Callout>
+
+## Key takeaways
+
+<SummaryBox title="Redis vs Memcached — recap">
+- **Redis**: **data structures**, **persistence**, **replication**, **pub/sub**, **ecosystem** — default choice when the cache is also a **mini datastore**.
+- **Memcached**: **minimal** model, **multi-threaded** server, **memory-efficient** for **opaque** values — great when you only need a **distributed hash table**.
+- For **simple caching only**, Memcached can be **competitive** on **throughput per box**; measure with **your** value sizes and **hot key** layout.
+- For **anything beyond** blob cache (structures, HA, durability options), **Redis** is usually the **better fit**.
+- Many **greenfield** stacks pick **Redis** for **versatility** and **managed offerings** (ElastiCache supports both — compare SKUs and limits).
+</SummaryBox>

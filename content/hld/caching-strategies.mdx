@@ -1,54 +1,101 @@
 # Caching Strategies
 
-## Introduction
+The **fastest database query is the one you never run.** **Caching** moves hot data closer to the caller — CPU caches, in-process, **Redis**, **CDN** — so reads skip slow paths. Choosing a **pattern** (aside, write-through, …) trades **latency**, **consistency**, and **complexity**.
 
-**Caching** stores copies of data in a faster or closer storage layer so repeated reads can be served without hitting the primary database. The strategy you choose affects consistency and performance.
+## The kitchen analogy
 
-## Cache-Aside (Lazy Loading)
+<CachingStrategiesVisual section="kitchen" />
 
-Application is responsible for loading and invalidating the cache.
+<CachingStrategiesVisual section="impact" />
 
-1. On **read**: Check cache; on miss, read from DB, then write to cache.
-2. On **write**: Write to DB, then invalidate (or update) cache.
+## Why cache?
 
-- **Pros**: Cache only holds what is read; simple.
-- **Cons**: Cache miss adds latency; invalidation can be tricky.
+Every hop to the **database** or **remote API** adds **latency** and **load**. A good cache **absorbs** repeated reads so the primary store can breathe.
+
+<CachingStrategiesVisual section="latency" />
+
+## Caching patterns
+
+There are several ways to implement caching. Each fits different **consistency** and **traffic** shapes.
+
+<CachingStrategiesVisual section="patternCards" />
+
+### Cache-aside (lazy loading) — code sketch
+
+Application checks cache first. On miss, load from DB and populate cache.
 
 <DiagramBlock
-  chart="sequenceDiagram
+  title="Cache-aside: read miss"
+  chart={`sequenceDiagram
     participant App
     participant Cache
     participant DB
-    App->>Cache: get(key)
+    App->>Cache: GET user:123
     Cache-->>App: miss
-    App->>DB: get(key)
-    DB-->>App: value
-    App->>Cache: set(key, value)"
-  title="Cache-aside: read miss flow"
+    App->>DB: SELECT ...
+    DB-->>App: row
+    App->>Cache: SET user:123 + TTL`}
 />
 
-## Write-Through
+```python
+def get_user(user_id):
+    user = cache.get(f"user:{user_id}")
+    if user:
+        return user
+    user = db.query("SELECT * FROM users WHERE id = ?", user_id)
+    cache.set(f"user:{user_id}", user, ttl=300)  # e.g. 5 minutes
+    return user
+```
 
-Every write goes to both cache and database. Cache and DB stay in sync on write.
+### Write-through
 
-- **Pros**: Read after write is always consistent.
-- **Cons**: Write latency includes both; cache holds all written data.
+Writes go **through** the cache to the database so the cache holds the latest value after a successful write.
 
-## Write-Behind (Write-Back)
+<DiagramBlock
+  title="Write-through"
+  chart={`sequenceDiagram
+    participant App
+    participant Cache
+    participant DB
+    App->>Cache: SET user:123
+    Cache->>DB: INSERT/UPDATE
+    DB-->>Cache: ok
+    Cache-->>App: ok`}
+/>
 
-Writes go to cache first; database is updated asynchronously in batches.
+### Write-behind (write-back)
 
-- **Pros**: Very fast writes; reduces DB load.
-- **Cons**: Risk of data loss if cache fails before flush; more complex.
+Ack the write to **cache** first; persist to DB **asynchronously** (queue, batch). Fast — but **durability** and **ordering** need explicit design.
 
-<Callout variant="warning" title="Consistency">
-Write-behind trades consistency and durability for speed. Use when you can tolerate some delay or loss.
+<Callout variant="warning" title="Write-behind risk">
+If the cache process dies before flush, **unflushed** writes can be **lost**. Use replication, fsync policies, and replay logs when the business cannot tolerate that window.
 </Callout>
 
-## Summary
+### Read-through
 
-<SummaryBox title="Key takeaways">
-- **Cache-aside**: App loads cache on miss; invalidates on write. Most common.
-- **Write-through**: Writes go to cache and DB; strong consistency.
-- **Write-behind**: Writes to cache, async to DB; fast but risk of loss.
+The application only talks to the **cache**; the cache **loads** from the DB on miss (library or sidecar implements the loader).
+
+## Pattern comparison
+
+<CachingStrategiesVisual section="patternTable" />
+
+## What to cache
+
+<CachingStrategiesVisual section="whatToCache" />
+
+## Cache invalidation
+
+<CachingStrategiesVisual section="invalidation" />
+
+<CachingStrategiesVisual section="hitRate" />
+
+## Key takeaways
+
+<SummaryBox title="Caching strategies — recap">
+- Caching **cuts latency** and **DB load** when **read patterns** repeat — measure before and after.
+- **Cache-aside** is the default mental model: **check cache → miss → DB → set** with **TTL** or **explicit** invalidation.
+- **Write-through** when reads must see **fresh** writes; **write-behind** when you need **write** speed and can handle **async** persistence.
+- Cache data that is **read often**, **expensive** to compute, and **slow-changing**; be careful with **PII**, **volatility**, and **huge** payloads.
+- **Invalidation** is hard: combine **TTL** with **event-driven** deletes or **versioned** keys; watch **hit rate** and **staleness** SLOs.
+- In production: **dashboards** for hit rate, memory, evictions, and **latency** p95 — aim for **strong** hit rates on **known hot** keys.
 </SummaryBox>
